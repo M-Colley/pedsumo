@@ -1,0 +1,7 @@
+resources/ulm/** filter=lfs diff=lfs merge=lfs -text
+resources/wildau/** filter=lfs diff=lfs merge=lfs -text
+resources/testNetwork/** filter=lfs diff=lfs merge=lfs -text
+resources/monaco/** filter=lfs diff=lfs merge=lfs -text
+resources/manhattan/** filter=lfs diff=lfs merge=lfs -text
+resources/ingolstadt/** filter=lfs diff=lfs merge=lfs -text
+resources/bologna/** filter=lfs diff=lfs merge=lfs -text
