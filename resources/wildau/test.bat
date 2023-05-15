@@ -1,1 +1,0 @@
-sumo --save-configuration test.sumocfg --write-license --default.speeddev 0 --no-step-log --no-duration-log --net-file=Netzmodell2.net.xml --routes=flows_SUMOV2.2.rou.xml  -a additional.add.xml
