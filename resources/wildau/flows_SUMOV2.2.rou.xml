@@ -1,0 +1,130 @@
+<routes >
+   <vType id="pkw" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="1" maxSpeed="50"/>
+ <vType id="truck" accel="0.8" decel="4.5" sigma="0.5" length="15" minGap="1" maxSpeed="50" vClass="truck"/>
+ <vType id="pt_train" vClass="rail"/>
+ <route id="pt_train_S46:0" edges="255228348" >
+        </route>
+ <route id="pt_train_S46:1" edges="153134060#0 153134060#1 255228346 255228345" >
+        </route>
+ 
+   <flow id="pkwflow1" color="blue" begin="15:00:00" end= "16:00:00" number="102"   from="-311298662#0" to="-4935286#0" via="-880140407 -4935286#1" type="pkw"/> <!--1-5-->
+   <flow id="pkwflow2" color="blue" begin="15:00:00" end= "16:00:00" number="1"   from="-835443464" to="-4894996#0" via="-880140407 62826731 " type="pkw"/> <!--1-7-->
+   <flow id="pkwflow3" color="blue" begin="15:00:00" end= "16:00:00" number="13"  from="-835443464" to="255274250" via="-880140407 37628709#1 " type="pkw"/> <!--1-11-->
+   <flow id="pkwflow4" color="blue" begin="15:00:00" end= "16:00:00" number="13" from="-311298662#0" to="120682114#3" via="-880140407 " type="pkw"/> <!--1-3-->
+   <flow id="pkwflow5" color="blue" begin="15:00:00" end= "16:00:00" number="1" from="880140407" to="-274763813#4" via="835443464 -274763815#0 " type="pkw"/> <!--1-8-->
+   <flow id="pkwflow6" color="blue" begin="15:00:00" end= "16:00:00" number="118" from="880140407" to="-27149243" via="835443464 311298682#0 " type="pkw"/> <!--1-10-->
+   <flow id="pkwflow7" color="blue" begin="15:00:00" end= "16:00:00" number="17" from="880140407" to="-111677669#0 " via="835443464 -gneE0 -876343451#3 " type="pkw"/> <!--1-4-->
+   <flow id="pkwflow8" color="blue" begin="15:00:00" end= "16:00:00" number="25" from="880140407 " to="-26943536#1" via="835443464 -gneE0 -876343451#3 -111677669#0  " type="pkw"/> <!--1-4-9-->
+   <flow id="pkwflow9" color="blue" begin="15:00:00" end= "16:00:00" number="1" from="-311298662#0 " to="gneE2" via="835445203 " type="pkw"/> <!--1-2-3-->
+   <flow id="pkwflow10" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-gneE4 " to="-26943536#1"  type="pkw"/> <!--2-9-->
+   <flow id="pkwflow11" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-gneE4 " to="-880140407" via="111677668#4 814061747#9 -835443464" type="pkw"/> <!--2-4-1-->
+   <flow id="pkwflow12" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-gneE4  " to="814061747#9" type="pkw"/> <!--2-4-->
+   <flow id="pkwflow13" color="red" begin="15:00:00" end= "16:00:00" number="25" from="-gneE4 " to="-27149243" via="111677668#4 814061747#9 " type="pkw"/> <!--2-4-10-->
+   <flow id="pkwflow14" color="red" begin="15:00:00" end= "16:00:00" number="1" from="-gneE4  " to="-274763813#2" via="111677668#4 814061747#9 -274763815#1 " type="pkw"/> <!--2-4-8-->
+   <flow id="pkwflow15" color="red" begin="15:00:00" end= "16:00:00" number="1" from="-gneE4  " to="-783907721#1"  type="pkw"/> <!--2-3-->
+   <flow id="pkwflow16" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-gneE4" to="255274250" via="-783907721#1 " type="pkw"/> <!--2-3-11-->
+   <flow id="pkwflow17" color="red" begin="15:00:00" end= "16:00:00" number="1" from="-gneE4" to="-28468732#1" via="-783907721#1 " type="pkw"/> <!--2-3-7-->
+   <flow id="pkwflow18" color="red" begin="15:00:00" end= "16:00:00" number="25" from="-gneE4" to="-4935286#0" via="-783907721#1 -535519490#0" type="pkw"/> <!--2-3-5-->
+   <flow id="pkwflow19" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-24337240#7 " to="205590836#2"  type="pkw"/> <!--3-11-->
+   <flow id="pkwflow20" color="red" begin="15:00:00" end= "16:00:00" number="1" from="-24337240#7 " to="-4894996#1" via="-783907721#0 " type="pkw"/> <!--3-7-->
+   <flow id="pkwflow21" color="red" begin="15:00:00" end= "16:00:00" number="25" from="-24337240#7 " to="-4935286#0" via="-535519490#0" type="pkw"/> <!--3-5-->
+   <flow id="pkwflow22" color="red" begin="15:00:00" end= "16:00:00" number="13" from="-24337240#7 " to="311298658" via="-535519490#1" type="pkw"/> <!--3-1-->
+   <flow id="pkwflow23" color="red" begin="15:00:00" end= "16:00:00" number="13" from="783907721#2" to="-gneE3"  type="pkw"/> <!--3-2-->
+   <flow id="pkwflow24" color="red" begin="15:00:00" end= "16:00:00" number="25" from="783907721#2 " to="-26943536#1"  type="pkw"/> <!--3-9-->
+   <flow id="pkwflow25" color="red" begin="15:00:00" end= "16:00:00" number="13" from="783907721#2" to="814061747#10" type="pkw"/> <!--3-4-->
+   <flow id="pkwflow26" color="red" begin="15:00:00" end= "16:00:00" number="25" from="783907721#2" to="-27149243" via="814061747#10 " type="pkw"/> <!--3-4-10-->
+   <flow id="pkwflow27" color="red" begin="15:00:00" end= "16:00:00" number="1" from="783907721#2" to="-274763813#5" via="814061747#10" type="pkw"/> <!--3-4-8-->
+   <flow id="pkwflow28" color="white" begin="15:00:00" end= "16:00:00" number="13" from="-gneE0" to="-26943536#1"  type="pkw"/> <!--4-->
+   <flow id="pkwflow29" color="white" begin="15:00:00" end= "16:00:00" number="1" from="-gneE0" to="gneE2" via="-111677669#0 " type="pkw"/>
+   <flow id="pkwflow30" color="white" begin="15:00:00" end= "16:00:00" number="15" from="-gneE0" to="-783907721#2 " via="-120682114#3 " type="pkw"/>
+   <flow id="pkwflow31" color="white" begin="15:00:00" end= "16:00:00" number="13" from="-gneE0" to="255274250" via="-835445203 -782714971#0" type="pkw"/>
+   <flow id="pkwflow32" color="white" begin="15:00:00" end= "16:00:00" number="1" from="-gneE0" to="-28468732#1" via="-835445203 -782714971#0 " type="pkw"/>
+   <flow id="pkwflow33" color="white" begin="15:00:00" end= "16:00:00" number="25" from="111677669#1 " to="-27149243"  type="pkw"/>
+   <flow id="pkwflow34" color="white" begin="15:00:00" end= "16:00:00" number="1" from="111677669#1" to="-274763813#4" via="gneE0 " type="pkw"/>
+   <flow id="pkwflow35" color="white" begin="15:00:00" end= "16:00:00" number="13" from="111677669#1" to="-25970859#0" via="-28298231" type="pkw"/> 
+   <flow id="pkwflow36" color="white" begin="15:00:00" end= "16:00:00" number="25" from="111677669#1" to="-4935286#0" via="-28298231 -25970859#0  " type="pkw"/> <!--4-->
+   <flow id="pkwflow37" color="yellow" begin="15:00:00" end= "16:00:00" number="217" from="4935286#0 " to="111677668#0" via="131942152 783907721#1 " type="pkw"/> <!--5-->
+   <flow id="pkwflow38" color="yellow" begin="15:00:00" end= "16:00:00" number="1" from="4935286#0" to="-111677669#5" via="131942152 311298682#1 " type="pkw"/>
+   <!--flow id="pkwflow39" color="yellow" begin="15:00:00" end= "16:00:00" number="0" from="4935286#0 " to="28468732#1" via="131942152 58621262#0" type="pkw"/-->
+   <flow id="pkwflow40" color="yellow" begin="15:00:00" end= "16:00:00" number="197" from="4935286#0" to="255274250" via="131942152"  type="pkw"/>
+   <flow id="pkwflow41" color="yellow" begin="15:00:00" end= "16:00:00" number="13" from="4935286#0 " to="311298662#0" via="131942152" type="pkw"/>
+   <flow id="pkwflow42" color="yellow" begin="15:00:00" end= "16:00:00" number="13" from="4935286#0 " to="-27149243" via="131942152 311298662#0" type="pkw"/>
+   <flow id="pkwflow43" color="yellow" begin="15:00:00" end= "16:00:00" number="1" from="4935286#0 " to="-240042195#2" via="131942152 311298662#0" type="pkw"/>
+   <flow id="pkwflow44" color="yellow" begin="15:00:00" end= "16:00:00" number="25" from="4935286#0 " to="-26943536#1" via="131942152 783907721#2 24337240#7 " type="pkw"/>
+   <flow id="pkwflow45" color="yellow" begin="15:00:00" end= "16:00:00" number="1" from="4935286#0" to="gneE4" via="131942152 783907721#2 24337240#7 " type="pkw"/>  <!--5-->
+   <flow id="pkwflow46" color="green" begin="15:00:00" end= "16:00:00" number="1" from="-4894996#0" to="-240042195#2" via=" -835443464 " type="pkw"/> <!--7-->
+   <!--flow id="pkwflow47" color="green" begin="15:00:00" end= "16:00:00" number="0" from="62826731" to="-26943536#1" via="782714971#0 " type="pkw"/-->
+   <flow id="pkwflow48" color="green" begin="15:00:00" end= "16:00:00" number="1" from="62826731" to="-27149243"  via=" 311298682#1" type="pkw"/>
+   <flow id="pkwflow49" color="green" begin="15:00:00" end= "16:00:00" number="1" from="62826731" to="311298662#0"  type="pkw"/>
+   <!--flow id="pkwflow50" color="green" begin="15:00:00" end= "16:00:00" number="1" from="62826731 " to="255274250"  type="pkw"/-->
+   <flow id="pkwflow51" color="green" begin="15:00:00" end= "16:00:00" number="1" from="62826731" to="111677668#3"  type="pkw"/>
+   <flow id="pkwflow52" color="green" begin="15:00:00" end= "16:00:00" number="1" from="-28468730#1 " to="-111677669#1" via="4970256#5 311298682#1  " type="pkw"/>
+   <!--flow id="pkwflow53" color="green" begin="15:00:00" end= "16:00:00" number="0" from="-28468730#1 " to="-4935286#0" via="-535519490#0" type="pkw"/-->
+   <flow id="pkwflow54" color="green" begin="15:00:00" end= "16:00:00" number="1" from="-28468730#1" to="-gneE3"  type="pkw"/> <!--7-->
+   <flow id="pkwflow55" color="red" begin="15:00:00" end= "16:00:00" number="1" from="274763813#4" to="-502325084#0"  type="pkw"/> <!--8-->
+   <flow id="pkwflow56" color="red" begin="15:00:00" end= "16:00:00" number="1" from="240042195#1 " to="835445203" via="-311298662#0 311298665 " type="pkw"/>
+   <flow id="pkwflow57" color="red" begin="15:00:00" end= "16:00:00" number="1" from="240042195#1" to="-111677669#2" via="-28298231 " type="pkw"/>
+   <flow id="pkwflow58" color="red" begin="15:00:00" end= "16:00:00" number="1" from="240042195#1" to="-26943536#1" via="-28298231" type="pkw"/>
+   <flow id="pkwflow59" color="red" begin="15:00:00" end= "16:00:00" number="120" from="240042195#1" to="255274250" via="-311298662#0 -880140407 " type="pkw"/>
+   <!--flow id="pkwflow60" color="red" begin="15:00:00" end= "16:00:00" number="0" from="240042195#1 " to="28468732#1" via=" -311298662#0 -880140407 " type="pkw"/-->
+   <flow id="pkwflow61" color="red" begin="15:00:00" end= "16:00:00" number="14" from="240042195#1" to="-4935286#0" via="-311298662#0 " type="pkw"/>
+   <flow id="pkwflow62" color="red" begin="15:00:00" end= "16:00:00" number="1" from="240042195#1" to="-27149243" type="pkw"/>
+   <flow id="pkwflow63" color="red" begin="15:00:00" end= "16:00:00" number="1" from="240042195#1 " to="gneE4" via="-gneE0 -111677668#3" type="pkw"/> <!--8-->
+   <flow id="pkwflow64" color="yellow" begin="15:00:00" end= "16:00:00" number="1" from="26943536#1" to="-25970859#0" via="gneE0" type="pkw"/> <!--9-->
+   <flow id="pkwflow65" color="yellow" begin="15:00:00" end= "16:00:00" number="48" from="26943536#1" to="-gneE3"  type="pkw"/>
+   <flow id="pkwflow66" color="yellow" begin="15:00:00" end= "16:00:00" number="26" from="26943536#1" to="-783907721#1" type="pkw"/>
+   <flow id="pkwflow67" color="yellow" begin="15:00:00" end= "16:00:00" number="13" from="26943536#1" to="gneE0"  type="pkw"/>
+   <flow id="pkwflow68" color="yellow" begin="15:00:00" end= "16:00:00" number="44" from="26943536#1" to="-4935286#0" via=" -24337240#7 -783907721#0 -535519490#0 " type="pkw"/>
+   <!--flow id="pkwflow69" color="yellow" begin="15:00:00" end= "16:00:00" number="0" from="26943536#1" to="-4894996#0" via="-24337240#7 -783907721#0 " type="pkw"/-->
+   <flow id="pkwflow70" color="yellow" begin="15:00:00" end= "16:00:00" number="21" from="26943536#1" to="-274763813#4" via="gneE0" type="pkw"/>
+   <flow id="pkwflow71" color="yellow" begin="15:00:00" end= "16:00:00" number="13" from="26943536#1" to="205590836#2" via="-783907721#2 " type="pkw"/>
+   <flow id="pkwflow72" color="yellow" begin="15:00:00" end= "16:00:00" number="128" from="26943536#1" to="-27149243 " via=" 814061747#10" type="pkw"/> <!--9-->
+   <flow id="pkwflow73" color="white" begin="15:00:00" end= "16:00:00" number="58" from="27149243" to="-880140407 "  type="pkw"/> <!--10-->
+   <flow id="pkwflow74" color="white" begin="15:00:00" end= "16:00:00" number="38" from="27149243" to="gneE4" via="-876343451#0 -111677668#3" type="pkw"/>
+   <flow id="pkwflow75" color="white" begin="15:00:00" end= "16:00:00" number="13" from="27149243" to="24337240#0" via="-782714966#0 311298665 " type="pkw"/>
+   <flow id="pkwflow76" color="white" begin="15:00:00" end= "16:00:00" number="1" from="27149243" to="-111677669#4"  type="pkw"/>  
+   <flow id="pkwflow77" color="white" begin="15:00:00" end= "16:00:00" number="13" from="27149243" to="-4935286#0" via="-311298662#0 -4895001#0 " type="pkw"/> 
+   <flow id="pkwflow78" color="white" begin="15:00:00" end= "16:00:00" number="1" from="27149243" to=" 4894996#0" via="-311298662#0 311298665" type="pkw"/>
+   <flow id="pkwflow79" color="white" begin="15:00:00" end= "16:00:00" number="29" from="27149243" to="37628709#1 " via="-311298662#0" type="pkw"/> 
+   <flow id="pkwflow80" color="white" begin="15:00:00" end= "16:00:00" number="155" from="27149243" to="-26943536#1 " via="-876343451#3" type="pkw"/> 
+   <flow id="pkwflow81" color="white" begin="15:00:00" end= "16:00:00" number="52" from="27149243" to="-240042195#2" via="-274763815#0" type="pkw"/> <!--10-->
+   <flow id="pkwflow82" color="green" begin="15:00:00" end= "16:00:00" number="1" from="-255274250" to="gneE4" via="120682114#3" type="pkw"/> <!--11-->
+   <flow id="pkwflow83" color="green" begin="15:00:00" end= "16:00:00" number="13" from="-255274250" to="782714966#1" via="-535519490#1 " type="pkw"/> 
+   <flow id="pkwflow84" color="green" begin="15:00:00" end= "16:00:00" number="13" from="-255274250" to="gneE0" via="120682114#3 111677669#0" type="pkw"/>
+   <flow id="pkwflow85" color="green" begin="15:00:00" end= "16:00:00" number="69" from="-255274250" to="-240042195#2 " via="880140407 835443464 " type="pkw"/>
+   <flow id="pkwflow86" color="green" begin="15:00:00" end= "16:00:00" number="13" from="-255274250" to="-26943536#1" via="120682114#3 111677668#3" type="pkw"/> 
+   <flow id="pkwflow87" color="green" begin="15:00:00" end= "16:00:00" number="13" from="-255274250" to="-27149243" via="880140407 311298682#1 " type="pkw"/> 
+   <flow id="pkwflow88" color="green" begin="15:00:00" end= "16:00:00" number="13" from="-255274250" to="835445203"  type="pkw"/>
+   <flow id="pkwflow89" color="green" begin="15:00:00" end= "16:00:00" number="217" from="-255274250" to="26216780#1" via="-535519490#1"  type="pkw"/>
+   <flow id="pkwflow90" color="green" begin="15:00:00" end= "16:00:00" number="1" from="-255274250" to="28468732#0" type="pkw"/> <!--11-->
+   
+	<flow id="truckflow1" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="-311298662#0" to="-4935286#0" via="-880140407 -4935286#1" type="truck"/> <!--Messtelle 1-5-->
+	<flow id="truckflow2" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="-gneE4" to="-26943536#1" via="111677668#0" type="truck"/> <!--Messstelle 2-9-->
+	<flow id="truckflow3" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="-835445203" to="-4935286#0" via="-311298665" type="truck"/> <!--Messstelle 3-5-->
+	<flow id="truckflow4" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="880137009#0" to="-26943536#1" via="111677668#0" type="truck"/> <!--Messstelle 3-9-->
+	<flow id="truckflow5" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="4935286#0" to="-27149243" via="311298662#0" type="truck"/> <!--Messstelle 5-1-10-->
+	<flow id="truckflow6" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="4935286#0" to="-26943536#1" via="880137009#0" type="truck"/> <!--Messstelle 5-3-9-->
+	<flow id="truckflow7" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="26943536#1" to="-27149243" via="gneE0" type="truck"/> <!--Messstelle 9-4-10-->
+	<flow id="truckflow8" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="27149243" to="-4935286#0" via="-311298662#0" type="truck"/> <!--Messstelle 10-1-5-->
+	<flow id="truckflow9" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="27149243" to="-26943536#1" via="-gneE0" type="truck"/> <!--Messstelle 10-4-9-->
+	<flow id="truckflow10" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="-255274250" to="-4935286#0" via="-311298665" type="truck"/> <!--Messstelle 11-5-->	
+	<flow id="truckflow11" color="red"  begin="15:00:00" end= "16:00:00" number="3"   from="4935286#0" to="255274250" via="311298665" type="truck"/> <!--Messstelle 5-11-->
+
+    <flow id="pt_train_S46:0" type="pt_train" route="pt_train_S46:0" begin="15:00:00" end="16:00:00" period="1200" line="S46:0" >
+        <param key="name" value="S46: S Königs Wusterhausen =&gt; S Westend"/>
+        <param key="completeness" value="0.04"/>
+    </flow>
+	<flow id="pt_train_S46:1" type="pt_train" route="pt_train_S46:1" begin="15:00:00" end="16:00:00" period="1200" line="S46:1" >
+        <param key="name" value="S46: S Westend =&gt; S Königs Wusterhausen"/>
+        <param key="completeness" value="0.04"/>
+    </flow>
+	<flow id="pt_train_RB425" type="pt_train" from="6074658#0" to="275267999#1" begin="15:00:00" end="16:00:00" period="30" line="regio"/>
+    <flow id="pt_train_RB628" type="pt_train" from="6074658#0" to="275267999#1" begin="15:00:00" end="16:00:00" period="60" line="regio"/>
+	<flow id="pt_train_REDosto7" type="pt_train" from="255228349#0" to="248740648#1" begin="15:00:00" end="16:00:00" period="120" line="regio"/>
+	
+	 <personFlow  id="person0" begin="15:00:00" color="green" end="16:00:00" number= "20">
+        <walk from="-535519490#0"  to="535519490#0"/>
+		</personFlow>
+		
+	
+</routes>

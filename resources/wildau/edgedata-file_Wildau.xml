@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 03/19/21 08:55:25 by Eclipse SUMO GUI Version 1.5.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="C:\Users\phart\OneDrive\Desktop\SUMO_Modell\SUMO-finales%20Modell%20(1)\Netzmodell_2\Netzmodell2.net.xml"/>
+        <route-files value="C:\Users\phart\OneDrive\Desktop\SUMO_Modell\SUMO-finales%20Modell%20(1)\Netzmodell_2\osm.passenger.trips.xml"/>
+        <additional-files value="C:\Users\phart\OneDrive\Desktop\SUMO_Modell\SUMO-finales%20Modell%20(1)\Netzmodell_2\additional2.add.xml"/>
+    </input>
+
+    <output>
+        <write-license value="true"/>
+    </output>
+
+    <processing>
+        <default.speeddev value="0"/>
+    </processing>
+
+    <report>
+        <duration-log.disable value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+</configuration>
+-->
+
+<meandata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/meandata_file.xsd">
+    <interval begin="53990" end="61000" id="SUMO-Wildau">
+        
+        
+        <edge id="-24337240#6"  entered="202" />
+        
+        <edge id="-25970859#1"  entered="431" />
+        
+        <edge id="-26943536#1"  entered="270" />
+        
+        <edge id="-27149243"  entered="350" />
+        
+        <edge id="-274763815#0"  entered="147" />
+        
+        <edge id="-4935286#0"  entered="465" />
+        
+        <edge id="-7365262"  entered="105" />
+        
+        <edge id="-814303496#0"  entered="282" />
+        
+        <edge id="-880137010"  entered="353"/>
+        
+        
+        <edge id="-gneE3"  entered="105" />
+        
+        <edge id="24337240#5"   entered="390"/>
+        
+        <edge id="25970859#1"  entered="301" />
+        
+        <edge id="26943536#1" entered="294" />
+        
+        <edge id="27149243"  entered="360" />
+        
+        <edge id="274763815#0"  entered="140" />
+        
+        <edge id="4935286#0"  entered="468" />
+        
+        <edge id="814303496#0"  entered="331" />
+        
+        <edge id="880137010"  entered="412" />
+        
+    </interval>
+</meandata>

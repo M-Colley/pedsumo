@@ -1,0 +1,14 @@
+<configuration>
+	<input>
+		<net-file value="../Netzmodell2.net.xml"/>
+		<route-files value="veh.rou.xml, ped.rou.xml"/>
+		<additional-files value="../additional.add.xml"/>
+		<gui-settings-file value="../settings.xml"/>
+		
+	</input>
+	<time>
+		<!--<begin value="53990"/>-->
+		<begin value="0"/>
+		<end value="61000"/>
+	</time>
+</configuration>
