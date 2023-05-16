@@ -1,8 +1,10 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
+
+torch>=2.0.0+cu117
 PySimpleGUI
 matplotlib
 pandas>=2.0.1
 transformers>=4.29.1
 numpy>=1.24.3
-torch
 torchvision
 torchaudio
