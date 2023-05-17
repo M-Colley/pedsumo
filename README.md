@@ -268,20 +268,20 @@ several result files:
     - contains the all factors and attributes (including DFVs) that had effect on the crossing event. Example: av_density, smombie_dfv, etc.: integer or float
     - final crossing probability (calculated from all factors): float
     - effective final crossing probability ("cleansed" number, so that final number is between 0.0 and 1.0): float
-- stats.xml (https://sumo.dlr.de/docs/Simulation/Output/StatisticOutput.html)
-- tripinfo.xml (https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html)
-- personsummary.xml (https://sumo.dlr.de/docs/Simulation/Output/PersonSummary.html)
-- summary.xml (https://sumo.dlr.de/docs/Simulation/Output/Summary.html)
-- vehroutes.xml (https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html)
-- fcd.xml (https://sumo.dlr.de/docs/Simulation/Output/FCDOutput.html)
-- ndump.xml (https://sumo.dlr.de/docs/Simulation/Output/RawDump.html)
-- full.xml (https://sumo.dlr.de/docs/Simulation/Output/FullOutput.html)
-- amitran.xml (https://sumo.dlr.de/docs/Simulation/Output/AmitranOutput.html)
-- edgedata.xml and lanedata.xml (https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
-- lanechange.xml (https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
-- queue.xml (https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
-- link.xml (https://sumo.dlr.de/docs/Simulation/Output/index.html under 'Additional Debugging Outputs')
-- personinfo.xml (https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html under 'Further Options')
+- [stats.xml](https://sumo.dlr.de/docs/Simulation/Output/StatisticOutput.html)
+- [tripinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html)
+- [personsummary.xml](https://sumo.dlr.de/docs/Simulation/Output/PersonSummary.html)
+- [summary.xml](https://sumo.dlr.de/docs/Simulation/Output/Summary.html)
+- [vehroutes.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html)
+- [fcd.xml](https://sumo.dlr.de/docs/Simulation/Output/FCDOutput.html)
+- [ndump.xml](https://sumo.dlr.de/docs/Simulation/Output/RawDump.html)
+- [full.xml](https://sumo.dlr.de/docs/Simulation/Output/FullOutput.html)
+- [amitran.xml](https://sumo.dlr.de/docs/Simulation/Output/AmitranOutput.html)
+- [edgedata.xml and lanedata.xml](https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
+- [lanechange.xml](https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
+- [queue.xml](https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
+- [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html under 'Additional Debugging Outputs')
+- [personinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html under 'Further Options')
 
 All of the generated xml output files (by SUMO) can be deactivated in `config.py`.
 
@@ -367,6 +367,6 @@ Open a command prompt.
 Remember to be careful, because disabling these modes will make it more difficult to copy and paste in the command prompt window. If you often use these features, you might want to leave them enabled and just be cautious about clicking within the window while your script is running.
 
 ## Licenses
-- SUMO: https://sumo.dlr.de/docs/Libraries_Licenses.html
-- Matplotlib: https://matplotlib.org/stable/users/project/license.html
-- PySimpleGUI: https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt
+- [SUMO](https://sumo.dlr.de/docs/Libraries_Licenses.html)
+- [Matplotlib](https://matplotlib.org/stable/users/project/license.html)
+- [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt)
