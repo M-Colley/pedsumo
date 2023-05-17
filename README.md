@@ -280,8 +280,8 @@ several result files:
 - [edgedata.xml and lanedata.xml](https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
 - [lanechange.xml](https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
 - [queue.xml](https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
-- [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html under 'Additional Debugging Outputs')
-- [personinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html under 'Further Options')
+- [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html) (under 'Additional Debugging Outputs')
+- [personinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html) (under 'Further Options')
 
 All of the generated xml output files (by SUMO) can be deactivated in `config.py`.
 
