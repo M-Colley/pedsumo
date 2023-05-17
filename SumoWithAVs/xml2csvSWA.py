@@ -27,11 +27,11 @@ if automaticPathAdjust:
         xml2csvPath = os.getenv("SUMO_HOME") + str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") else str("\\tools\\xml\\xml2csv.py")
     except:
         path_set_successful = False
-        print("Could not find system path to SUMO_HOME. No xml files converted.")
+        print("xml2csvSWA: Could not find system path to SUMO_HOME.")
 
 if not os.path.exists(xml2csvPath):
     path_set_successful = False
-    print("Could not find xml2csv.py file. No xml files converted.")
+    print("xml2csvSWA: Could not find xml2csv.py file.")
 
 if __name__ == "__main__" and path_set_successful:
     exclude_files = []  # these files will be excluded from converting to csv. Example: ['full.xml', 'ndump.xml']
