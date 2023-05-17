@@ -393,6 +393,8 @@ def __create_cgui() -> PySimpleGUI.Window:
     switch_button = PySimpleGUI.Checkbox("Data Visualization during Simulation", default=cf.visualization_shown, key='sb')
     sumogui_button = PySimpleGUI.Checkbox("SUMO's GUI", default=cf.sumo_GuiOn,
                                          key='sgui')
+    convert_xml_button = PySimpleGUI.Checkbox("Convert xml to csv after simulation", default=cf.convert_to_csv_after_sim,
+                                         key='cxml')
 
     cguiNumberOfLoopsText = PySimpleGUI.Text('How many runs of this configuration?')
     cguiNumberOfLoopsInput = PySimpleGUI.InputText(default_text=1, key='-loop-')
@@ -405,7 +407,7 @@ def __create_cgui() -> PySimpleGUI.Window:
                    [cguiScenTable],
                    [cguiStartButton, cguiQuitButton],
                    [PySimpleGUI.Text()],
-                   [switch_button, sumogui_button],
+                   [switch_button, sumogui_button, convert_xml_button],
                    [cguiAddLoopButton, cguiCurrentLoopsNumber],
                    [cguiNumberOfLoopsText, cguiNumberOfLoopsInput],
                    [PySimpleGUI.Text()],
@@ -574,6 +576,10 @@ def run_cgui() -> str:
                     cf.sumo_GuiOn = True
                 else:
                     cf.sumo_GuiOn = False
+                if values['cxml']:
+                    cf.convert_to_csv_after_sim = True
+                else:
+                    cf.convert_to_csv_after_sim = False
 
             current_run_config = loop_data[0]
             current_sim = current_run_config[0]
@@ -623,6 +629,10 @@ def run_cgui() -> str:
                 cf.sumo_GuiOn = True
             else:
                 cf.sumo_GuiOn = False
+            if values['cxml']:
+                cf.convert_to_csv_after_sim = True
+            else:
+                cf.convert_to_csv_after_sim = False
 
 
             if values['-ud-'] != '':

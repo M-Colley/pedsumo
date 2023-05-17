@@ -9,6 +9,7 @@ import csv
 import config as cf
 import gui
 from transformers import pipeline
+import xml2csvSWA
 
 # we need to import some python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -888,6 +889,12 @@ def end_simulation():
     if cf.guiOn:
         gui.close_gui()
     global results_folder_for_next_sim
+    if cf.convert_to_csv_after_sim:
+        try:
+            os_arg = xml2csvSWA.pythonPath + " xml2csvSWA.py -fn " + results_folder_for_next_sim.rsplit('/', 1)[-1]
+            os.system(os_arg)
+        except:
+            print("Converting result folder content to csv failed. You may have to adjust paths in xml2csvSWA.py.")
     results_folder_for_next_sim = ""
     sys.stdout.flush()
 
@@ -994,7 +1001,7 @@ def check_gui():
     choice = gui.run_gui()
     match choice:
         case 'closed':
-            traci.close()
+            end_simulation()
             sys.exit()
         case 'stop':
             return True

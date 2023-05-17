@@ -22,6 +22,8 @@ update_delay = 50  # delay after which gui updates data or terminal outputs simu
 run_sim_until_step = -1  # Specified timestep until the simulation will run. Default should always be -1.
                         # Overwrites last timestep in sumocfg if not -1. Higher timestep may not be supported by scenario.
 
+convert_to_csv_after_sim = True  # automatically converts result folder content to csv after simulation if True
+
 # The following variables decide if the appropriate result file will be written or not (after the simulation)
 outputFilesActive = True # If false, turns off all following output files:
 

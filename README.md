@@ -3,8 +3,8 @@
 ## Introduction
 
 ### Project SumoWithAVs (or 'Investigating Macroscopic Effects of Automated Vehicles on Traffic')
-[SUMO (Simulation of Urban MObility)](https://www.eclipse.org/sumo/)  is "an open source, highly portable, microscopic and 
-continuous multi-modal traffic simulation package designed to handle large networks" .
+SUMO (Simulation of Urban MObility)  is "an open source, highly portable, microscopic and 
+continuous multi-modal traffic simulation package designed to handle large networks" (https://www.eclipse.org/sumo/).
 
 This project concerns the effects of automated vehicles (AVs) in traffic and how their interaction with pedestrians lead
 to different (especially negative) outcomes when it comes to the fluent movement
@@ -268,20 +268,20 @@ several result files:
     - contains the all factors and attributes (including DFVs) that had effect on the crossing event. Example: av_density, smombie_dfv, etc.: integer or float
     - final crossing probability (calculated from all factors): float
     - effective final crossing probability ("cleansed" number, so that final number is between 0.0 and 1.0): float
-- [stats.xml](https://sumo.dlr.de/docs/Simulation/Output/StatisticOutput.html)
-- [tripinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html)
-- [personsummary.xml](https://sumo.dlr.de/docs/Simulation/Output/PersonSummary.html)
-- [summary.xml](https://sumo.dlr.de/docs/Simulation/Output/Summary.html)
-- [vehroutes.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html)
-- [fcd.xml](https://sumo.dlr.de/docs/Simulation/Output/FCDOutput.html)
-- [ndump.xml](https://sumo.dlr.de/docs/Simulation/Output/RawDump.html)
-- [full.xml](https://sumo.dlr.de/docs/Simulation/Output/FullOutput.html)
-- [amitran.xml](https://sumo.dlr.de/docs/Simulation/Output/AmitranOutput.html)
-- [edgedata.xml and lanedata.xml](https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
-- [lanechange.xml](https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
-- [queue.xml](https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
-- [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html) (under 'Additional Debugging Outputs')
-- [personinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html) (under 'Further Options')
+- stats.xml (https://sumo.dlr.de/docs/Simulation/Output/StatisticOutput.html)
+- tripinfo.xml (https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html)
+- personsummary.xml (https://sumo.dlr.de/docs/Simulation/Output/PersonSummary.html)
+- summary.xml (https://sumo.dlr.de/docs/Simulation/Output/Summary.html)
+- vehroutes.xml (https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html)
+- fcd.xml (https://sumo.dlr.de/docs/Simulation/Output/FCDOutput.html)
+- ndump.xml (https://sumo.dlr.de/docs/Simulation/Output/RawDump.html)
+- full.xml (https://sumo.dlr.de/docs/Simulation/Output/FullOutput.html)
+- amitran.xml (https://sumo.dlr.de/docs/Simulation/Output/AmitranOutput.html)
+- edgedata.xml and lanedata.xml (https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
+- lanechange.xml (https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
+- queue.xml (https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
+- link.xml (https://sumo.dlr.de/docs/Simulation/Output/index.html under 'Additional Debugging Outputs')
+- personinfo.xml (https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html under 'Further Options')
 
 All of the generated xml output files (by SUMO) can be deactivated in `config.py`.
 
@@ -290,7 +290,7 @@ Important: With an increasing number of activated output files, the performance 
 Also, be aware, if the simulation does not end properly (for example, if you interrupt the program in an unintended way), some of these listed result files may
 not actually contain any data.
 
-Use the `xml2csv.py` script in 'SumoWithAVs' to quickly convert all xml files within a results folder to csv. This
+Use the `xml2csvSWA.py` script in 'SumoWithAVs' to quickly convert all xml files within a results folder to csv. This
 utilizes Python and the SUMO script `xml2csv.py` by SUMO in the terminal. When 
 executing the script, it will prompt you to give a name of a folder located in the 'simulation-results' directory.
 (Example: 20230425-062946-Small_Test_Network)
@@ -299,9 +299,12 @@ Before using it, adjust the `pythonPath` variable accordingly (read comment) and
 You have several options before executing the script: Add files to exclude_files to exclude them from converting to csv.
 If `delete_after_convert` is set to True, files that are converted to csv will have their original xml version deleted.
 `zip_folder_after_convert` will make a zip archive out of the new folder and `delete_original_folder_after_zip` 
-deletes the original folder but only if `zip_folder_after_convert` is set to True.
+deletes the original folder but only if `zip_folder_after_convert` is set to True. The script generally tries to adjust 
+its `xml2csv.py` path to your operating system but you might want to check if the path is correct for your use.
 
-Note: If the simulation ended with an error (you closed it in an unintended way, computer crash, etc.) 
+Note: The conversion to csv happens automatically after each simulation if the `convert_to_csv_after_sim` in the `config.py` is set to `True` and it prints an error message to the console if you did not adjust the paths in `xml2csvSWA.py`. If you use the GUI, you can check a box (or uncheck it) if you want this automatic conversion after the simulation.
+
+Also note: If the simulation ended with an error (you closed it in an unintended way, computer crash, etc.) 
 using `xml2csv.py` will most likely not work properly and will throw many errors.
 
 ## How to add or create a new scenario
@@ -367,6 +370,6 @@ Open a command prompt.
 Remember to be careful, because disabling these modes will make it more difficult to copy and paste in the command prompt window. If you often use these features, you might want to leave them enabled and just be cautious about clicking within the window while your script is running.
 
 ## Licenses
-- [SUMO](https://sumo.dlr.de/docs/Libraries_Licenses.html)
-- [Matplotlib](https://matplotlib.org/stable/users/project/license.html)
-- [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt)
+- SUMO: https://sumo.dlr.de/docs/Libraries_Licenses.html
+- Matplotlib: https://matplotlib.org/stable/users/project/license.html
+- PySimpleGUI: https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt
