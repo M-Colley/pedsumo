@@ -1,9 +1,9 @@
-# SumoWithAVs
+# Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
 
 ## Introduction
 
 ### Project SumoWithAVs (or 'Investigating Macroscopic Effects of Automated Vehicles on Traffic')
-SUMO (Simulation of Urban MObility)  is "an open source, highly portable, microscopic and 
+[SUMO](https://www.eclipse.org/sumo/) (Simulation of Urban MObility)  is "an open source, highly portable, microscopic and 
 continuous multi-modal traffic simulation package designed to handle large networks" (https://www.eclipse.org/sumo/).
 
 This project concerns the effects of automated vehicles (AVs) in traffic and how their interaction with pedestrians lead
