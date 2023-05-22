@@ -913,7 +913,8 @@ def get_current_simulation_name() -> str:
 
 # creates new folder for results in next simulation
 def get_new_results_folder():
-    data_output_path = cf.resultsFolderPath + "/" + get_current_simulation_name() + "-avd" + str(cf.av_density) + "-ed" + str(cf.ehmi_density) + "-" + time.strftime("%Y%m%d-%H%M%S")
+    #data_output_path = cf.resultsFolderPath + "/" + get_current_simulation_name() + "-avd" + str(cf.av_density) + "-ed" + str(cf.ehmi_density) + "-" + time.strftime("%Y%m%d-%H%M%S")
+    data_output_path = os.path.join(cf.resultsFolderPath,"{}-avd{}-ed{}-{}".format(get_current_simulation_name(), cf.av_density, cf.ehmi_density, time.strftime("%Y%m%d-%H%M%S")))
     if not os.path.exists(data_output_path):
         os.makedirs(data_output_path)
         return data_output_path
@@ -928,6 +929,46 @@ def generate_start_config(sumo_binary: str) -> list[str]:
 
     :param sumo_binary: string with information about the binary (sumo or sumo-gui)
     """
+    traci_start_config = [sumo_binary, "-c", cf.sumocfgPath]
+    if cf.outputFilesActive:
+        output_options = [
+            ("statsOutput", "stats.xml"),
+            ("tripinfoOutput", "tripinfo.xml"),
+            ("personsummaryOutput", "personsummary.xml"),
+            ("summaryOutput", "summary.xml"),
+            ("vehroutesOutput", "vehroutes.xml"),
+            ("fcdOutput", "fcd.xml"),
+            ("fullOutput", "full.xml"),
+            ("queueOutput", "queue.xml"),
+            ("edgedataOutput", "edgedata.xml"),
+            ("lanedataOutput", "lanedata.xml"),
+            ("lanechangeOutput", "lanechange.xml"),
+            ("amitranOutput", "amitran.xml"),
+            ("ndumpOutput", "ndump.xml"),
+            ("linkOutput", "link.xml"),
+            ("personinfoOutput", "personinfo.xml"),
+        ]
+
+        for output_option, output_file in output_options:
+            if getattr(cf, output_option):
+                traci_start_config.append("--" + output_option.lower())
+                traci_start_config.append(
+                    os.path.join(results_folder_for_next_sim, output_file)
+                )
+
+    traci_start_config.append("--start")
+    traci_start_config.append("--quit-on-end")
+
+    return traci_start_config
+
+"""
+def generate_start_config(sumo_binary: str) -> list[str]:
+
+    Appends all start arguments as defined in config.py and their respective file locations to a list of strings.
+    This list is then returned and used to start traci with the appropriate start arguments.
+
+    :param sumo_binary: string with information about the binary (sumo or sumo-gui)
+    
     traci_start_config = [sumo_binary, "-c", cf.sumocfgPath]
     if cf.outputFilesActive:
         if cf.statsOutput:
@@ -994,7 +1035,7 @@ def generate_start_config(sumo_binary: str) -> list[str]:
     traci_start_config.append("--quit-on-end")
 
     return traci_start_config
-
+"""
 
 # runs gui during simulation
 def check_gui():
