@@ -14,7 +14,7 @@ the name of a folder located in 'simulation-results'. NAME OF FOLDER CANNOT CONT
 BEFORE USING THIS SCRIPT, ADJUST pythonPath AND xml2csvPath AS IF YOU WERE USING THE TERMINAL(!!!):
 """
 
-pythonPath = "python"  # prompt to use Python on your computer in the command line
+pythonPath = "python"  # prompt to use Python on your computer in the command line, can be python 3
 xml2csvPath = ""  # prompt to use xml2csv.py in your sumo folder on your computer as command line argument
 automaticPathAdjust = True  # set to False, if you want the custom xml2csvPath above to count
 custom_conversion = ["stats.xml", "most.stats.xml"]  # these will have their own converting process (without xml2csv.py)
@@ -26,8 +26,11 @@ if automaticPathAdjust:
     try:
         #print("SUMO_HOME variable set to: " + os.getenv("SUMO_HOME"))
         #print("The current platform is: " + sys.platform)
-        string_to_xml2csv_per_os = str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") or sys.platform.startswith("linux") else str("tools\\xml\\xml2csv.py")
-        xml2csvPath = os.getenv("SUMO_HOME") + string_to_xml2csv_per_os
+        #string_to_xml2csv_per_os = str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") or sys.platform.startswith("linux") else str("tools\\xml\\xml2csv.py")
+        # new platform independent method
+        string_to_xml2csv_per_os = os.path.join("tools", "xml", "xml2csv.py")
+        #xml2csvPath = os.getenv("SUMO_HOME") + string_to_xml2csv_per_os
+        xml2csvPath = os.path.join(os.getenv("SUMO_HOME"), string_to_xml2csv_per_os)
         #print("The final successful xml2csvPath is: " + xml2csvPath)
     except:
         path_set_successful = False
@@ -57,7 +60,7 @@ if __name__ == "__main__" and path_set_successful:
     else:
         folderName = args.fn
 
-    folderPath = "../simulation-results/" + folderName
+    folderPath = os.path.join("..", "simulation-results", folderName)
 
     if not os.path.exists(folderPath):
         print("Not a correct folder name, aborting script. Make sure that the folder is located in 'simulation-results'.")
@@ -77,7 +80,7 @@ if __name__ == "__main__" and path_set_successful:
             print("Note: If custom conversion of stats.xml causes errors or does not work properly, "
                   "the simulation most likely ended with errors or SUMO has a new version of the stats.xml file. "
                   "Remove from custom_conversion list in the latter case.")
-            stats_path = folderPath + "/" + xml_file
+            stats_path = os.path.join(folderPath, xml_file)
             tree = ET.parse(stats_path)
             root = tree.getroot()
 
@@ -109,7 +112,9 @@ if __name__ == "__main__" and path_set_successful:
                     "pedestrianStatistics_number","pedestrianStatistics_routeLength","pedestrianStatistics_timeLoss",
                     "rideStatistics_number","transportStatistics_number"]
 
-            with open(folderPath + "/" + "stats.csv", 'w') as f:
+            # Construct the path in a platform-independent way
+            file_path = os.path.join(folderPath, "stats.csv")
+            with open(file_path, 'w', newline='') as f:
                 writer = csv.writer(f, delimiter=';')
                 writer.writerow(header)
                 writer.writerow(stats_row)
@@ -118,11 +123,12 @@ if __name__ == "__main__" and path_set_successful:
     for xmlFile in xml_files:
         if xmlFile not in exclude_files:
             print("Converting " + xmlFile + "...")
-            path_to_xml_file = folderPath + "/" + xmlFile
+            path_to_xml_file = os.path.join(folderPath, xmlFile)
             if xmlFile in custom_conversion:
                 convert_to_csv(xmlFile)
             else:
-                os.system(pythonPath + " " + xml2csvPath + " " + path_to_xml_file)
+                #os.system(pythonPath + " " + xml2csvPath + " " + path_to_xml_file)
+                subprocess.run([pythonPath, xml2csvPath, path_to_xml_file])
             if delete_after_convert:
                 os.remove(path_to_xml_file)
 
