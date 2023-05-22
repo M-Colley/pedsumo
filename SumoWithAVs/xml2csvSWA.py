@@ -26,7 +26,7 @@ if automaticPathAdjust:
     try:
         #print("SUMO_HOME variable set to: " + os.getenv("SUMO_HOME"))
         #print("The current platform is: " + sys.platform)
-        string_to_xml2csv_per_os = str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") else str("tools\\xml\\xml2csv.py")
+        string_to_xml2csv_per_os = str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") or sys.platform.startswith("linux") else str("tools\\xml\\xml2csv.py")
         xml2csvPath = os.getenv("SUMO_HOME") + string_to_xml2csv_per_os
         #print("The final successful xml2csvPath is: " + xml2csvPath)
     except:
