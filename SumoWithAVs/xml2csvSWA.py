@@ -24,14 +24,18 @@ custom_conversion = ["stats.xml", "most.stats.xml"]  # these will have their own
 path_set_successful: bool = True
 if automaticPathAdjust:
     try:
-        xml2csvPath = os.getenv("SUMO_HOME") + str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") else str("\\tools\\xml\\xml2csv.py")
+        #print("SUMO_HOME variable set to: " + os.getenv("SUMO_HOME"))
+        #print("The current platform is: " + sys.platform)
+        string_to_xml2csv_per_os = str("/tools/xml/xml2csv.py") if sys.platform.startswith("darwin") else str("tools\\xml\\xml2csv.py")
+        xml2csvPath = os.getenv("SUMO_HOME") + string_to_xml2csv_per_os
+        #print("The final successful xml2csvPath is: " + xml2csvPath)
     except:
         path_set_successful = False
         print("xml2csvSWA: Could not find system path to SUMO_HOME.")
 
 if not os.path.exists(xml2csvPath):
     path_set_successful = False
-    print("xml2csvSWA: Could not find xml2csv.py file.")
+    print("xml2csvSWA: Could not find xml2csv.py file. Looked in path: " + xml2csvPath)
 
 if __name__ == "__main__" and path_set_successful:
     exclude_files = []  # these files will be excluded from converting to csv. Example: ['full.xml', 'ndump.xml']
