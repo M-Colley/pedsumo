@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import csv
 import argparse
 import sys
+import subprocess
 
 """
 This script is specifically made to quickly and comfortably convert all xml files in a folder
