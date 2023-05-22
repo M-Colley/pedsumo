@@ -921,47 +921,6 @@ def get_new_results_folder():
     else:
         return ""
 
-"""
-def generate_start_config(sumo_binary: str) -> list[str]:
-    
-    Appends all start arguments as defined in config.py and their respective file locations to a list of strings.
-    This list is then returned and used to start traci with the appropriate start arguments.
-
-    :param sumo_binary: string with information about the binary (sumo or sumo-gui)
-    
-    traci_start_config = [sumo_binary, "-c", cf.sumocfgPath]
-    if cf.outputFilesActive:
-        output_options = [
-            ("statsOutput", "stats.xml"),
-            ("tripinfoOutput", "tripinfo.xml"),
-            ("personsummaryOutput", "personsummary.xml"),
-            ("summaryOutput", "summary.xml"),
-            ("vehroutesOutput", "vehroutes.xml"),
-            ("fcdOutput", "fcd.xml"),
-            ("fullOutput", "full.xml"),
-            ("queueOutput", "queue.xml"),
-            ("edgedataOutput", "edgedata.xml"),
-            ("lanedataOutput", "lanedata.xml"),
-            ("lanechangeOutput", "lanechange.xml"),
-            ("amitranOutput", "amitran.xml"),
-            ("ndumpOutput", "ndump.xml"),
-            ("linkOutput", "link.xml"),
-            ("personinfoOutput", "personinfo.xml"),
-        ]
-
-        for output_option, output_file in output_options:
-            if getattr(cf, output_option):
-                traci_start_config.append("--" + output_option.lower())
-                traci_start_config.append(
-                    os.path.join(results_folder_for_next_sim, output_file)
-                )
-
-    traci_start_config.append("--start")
-    traci_start_config.append("--quit-on-end")
-
-    return traci_start_config
-"""
-
 def generate_start_config(sumo_binary: str) -> list[str]:
     """
     Appends all start arguments as defined in config.py and their respective file locations to a list of strings.
@@ -973,63 +932,63 @@ def generate_start_config(sumo_binary: str) -> list[str]:
     if cf.outputFilesActive:
         if cf.statsOutput:
             traci_start_config.append("--statistic-output")
-            traci_start_config.append(results_folder_for_next_sim + "/stats.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "stats.xml"))
 
         if cf.tripinfoOutput:
             traci_start_config.append("--tripinfo-output")
-            traci_start_config.append(results_folder_for_next_sim + "/tripinfo.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "tripinfo.xml"))
 
         if cf.personsummaryOutput:
             traci_start_config.append("--person-summary-output")
-            traci_start_config.append(results_folder_for_next_sim + "/personsummary.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "personsummary.xml"))
 
         if cf.summaryOutput:
             traci_start_config.append("--summary")
-            traci_start_config.append(results_folder_for_next_sim + "/summary.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "summary.xml"))
 
         if cf.vehroutesOutput:
             traci_start_config.append("--vehroute-output")
-            traci_start_config.append(results_folder_for_next_sim + "/vehroutes.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "vehroutes.xml"))
 
         if cf.fcdOutput:
             traci_start_config.append("--fcd-output")
-            traci_start_config.append(results_folder_for_next_sim + "/fcd.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "fcd.xml"))
 
         if cf.fullOutput:
             traci_start_config.append("--full-output")
-            traci_start_config.append(results_folder_for_next_sim + "/full.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "full.xml"))
 
         if cf.queueOutput:
             traci_start_config.append("--queue-output")
-            traci_start_config.append(results_folder_for_next_sim + "/queue.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "queue.xml"))
 
         if cf.edgedataOutput:
             traci_start_config.append("--edgedata-output")
-            traci_start_config.append(results_folder_for_next_sim + "/edgedata.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "edgedata.xml"))
 
         if cf.lanedataOutput:
             traci_start_config.append("--lanedata-output")
-            traci_start_config.append(results_folder_for_next_sim + "/lanedata.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "lanedata.xml"))
 
         if cf.lanechangeOutput:
             traci_start_config.append("--lanechange-output")
-            traci_start_config.append(results_folder_for_next_sim + "/lanechange.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "lanechange.xml"))
 
         if cf.amitranOutput:
             traci_start_config.append("--amitran-output")
-            traci_start_config.append(results_folder_for_next_sim + "/amitran.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "amitran.xml"))
 
         if cf.ndumpOutput:
             traci_start_config.append("--ndump")
-            traci_start_config.append(results_folder_for_next_sim + "/ndump.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "ndump.xml"))
 
         if cf.linkOutput:
             traci_start_config.append("--link-output")
-            traci_start_config.append(results_folder_for_next_sim + "/link.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "link.xml"))
 
         if cf.personinfoOutput:
             traci_start_config.append("--personinfo-output")
-            traci_start_config.append(results_folder_for_next_sim + "/personinfo.xml")
+            traci_start_config.append(os.path.join(results_folder_for_next_sim, "personinfo.xml"))
 
     traci_start_config.append("--start")
     traci_start_config.append("--quit-on-end")

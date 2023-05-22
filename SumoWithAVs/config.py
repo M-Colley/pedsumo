@@ -1,17 +1,18 @@
 #!/usr/bin/env python
+import os
 
-sumocfgPath = "../resources/testNetwork/BasicConfig.sumocfg" # default path used for simulation. Has to be .sumocfg.
+sumocfgPath = os.path.join("..", "resources", "testNetwork", "BasicConfig.sumocfg") # default path used for simulation. Has to be .sumocfg.
 
-resultsFolderPath = "../simulation-results" # path where simulation results are stored. Do not change unnecessarily.
+resultsFolderPath = os.path.join("..", "simulation-results") # path where simulation results are stored. Do not change unnecessarily.
 
 # Add other scenarios to list: [Name of scenario, path to .sumocfg of scenario, path to where tripinfo.xml should be generated]
-scenarios = [["Small_Test_Network", "../resources/testNetwork/BasicConfig.sumocfg"],
-             ["Ingolstadt", "../resources/ingolstadt/simulation/24h_sim.sumocfg"],
-             ["Ulm", "../resources/ulm/UlmCity/osm.sumocfg"],
-             ["Bologna_small", "../resources/bologna/run.sumocfg"],
-             ["Wildau", "../resources/wildau/randomTrips/output_configuration_randomTrips.sumocfg"],
-             ["Monaco", "../resources/monaco/scenario/most.sumocfg"],
-             ["Manhattan", "../resources/manhattan/manhattan.sumocfg"]
+scenarios = [["Small_Test_Network", os.path.join("..", "resources", "testNetwork", "BasicConfig.sumocfg")],
+             ["Ingolstadt", os.path.join("..", "resources", "ingolstadt", "simulation", "24h_sim.sumocfg")],
+             ["Ulm", os.path.join("..", "resources", "ulm", "UlmCity", "osm.sumocfg")],
+             ["Bologna_small", os.path.join("..", "resources", "bologna", "run.sumocfg")],
+             ["Wildau", os.path.join("..", "resources", "wildau", "randomTrips", "output_configuration_randomTrips.sumocfg")],
+             ["Monaco", os.path.join("..", "resources", "monaco", "scenario", "most.sumocfg")],
+             ["Manhattan", os.path.join("..", "resources", "manhattan", "manhattan.sumocfg")]
              ]
 
 sumo_GuiOn = False  # turns sumo's own gui on or off (True = on)
