@@ -14,7 +14,7 @@ the name of a folder located in 'simulation-results'. NAME OF FOLDER CANNOT CONT
 BEFORE USING THIS SCRIPT, ADJUST pythonPath AND xml2csvPath AS IF YOU WERE USING THE TERMINAL(!!!):
 """
 
-pythonPath = "python3"  # prompt to use Python on your computer in the command line
+pythonPath = "python"  # prompt to use Python on your computer in the command line
 xml2csvPath = ""  # prompt to use xml2csv.py in your sumo folder on your computer as command line argument
 automaticPathAdjust = True  # set to False, if you want the custom xml2csvPath above to count
 custom_conversion = ["stats.xml", "most.stats.xml"]  # these will have their own converting process (without xml2csv.py)
