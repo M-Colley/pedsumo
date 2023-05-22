@@ -921,7 +921,7 @@ def get_new_results_folder():
     else:
         return ""
 
-
+"""
 def generate_start_config(sumo_binary: str) -> list[str]:
     """
     Appends all start arguments as defined in config.py and their respective file locations to a list of strings.
@@ -960,15 +960,15 @@ def generate_start_config(sumo_binary: str) -> list[str]:
     traci_start_config.append("--quit-on-end")
 
     return traci_start_config
-
 """
-def generate_start_config(sumo_binary: str) -> list[str]:
 
+def generate_start_config(sumo_binary: str) -> list[str]:
+    """
     Appends all start arguments as defined in config.py and their respective file locations to a list of strings.
     This list is then returned and used to start traci with the appropriate start arguments.
 
     :param sumo_binary: string with information about the binary (sumo or sumo-gui)
-    
+    """
     traci_start_config = [sumo_binary, "-c", cf.sumocfgPath]
     if cf.outputFilesActive:
         if cf.statsOutput:
@@ -1035,7 +1035,7 @@ def generate_start_config(sumo_binary: str) -> list[str]:
     traci_start_config.append("--quit-on-end")
 
     return traci_start_config
-"""
+
 
 # runs gui during simulation
 def check_gui():
