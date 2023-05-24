@@ -6,6 +6,7 @@ import random
 import sys
 import argparse
 import csv
+from enum import IntEnum
 import config as cf
 import gui
 from transformers import pipeline
@@ -33,8 +34,10 @@ def get_options():
     arg_parser = argparse.ArgumentParser()
     loop_group = arg_parser.add_argument_group("loop options")
     arg_parser.add_argument("--nogui", action="store_true", default=False, help="run the commandline version of sumo")
-    arg_parser.add_argument("-v", "--verbosity", dest="verbosity", type=str, default="n", choices=("n", "v"),
-                            help="verbosity of the command line output. Options are n (default) and v")
+    arg_parser.add_argument("-v", "--verbosity", dest="verbosity", type=str, default="normal",
+                            choices=("none", "sparse", "normal", "verbose"),
+                            help="verbosity of the command line output. Options are none, sparse, normal (default) and "
+                                 "verbose")
     arg_parser.add_argument("--scenario", dest="scenario", type=str,
                             choices=cf.scenario_dict.keys(),
                             help="default = Small_Test_Network. Defines the scenario you want to simulate. "
@@ -101,6 +104,13 @@ def get_options():
     return args
 
 
+class Verbosity(IntEnum):
+    NONE = 0
+    SPARSE = 1
+    NORMAL = 2
+    VERBOSE = 3
+
+
 class FloatRange(object):
     def __init__(self, start, end):
         self.start = start
@@ -158,7 +168,7 @@ def create_incoming_lanes_dictionary() -> dict[str, set[str]]:
         # filter for crossings
         if ("c" in lane) and ("cluster" not in lane):
             internal_foes_dict[lane] = traci.lane.getInternalFoes(lane)
-    if verbosity == 'v':
+    if verbosity >= Verbosity.VERBOSE:
         print("internal foes dict: " + str(internal_foes_dict))
 
     # iterate through all lanes
@@ -637,7 +647,7 @@ def run():
 
         traci.simulationStep()  # Step ahead in simulation
 
-        if not cf.guiOn and traci.simulation.getTime() % cf.update_delay == 0:
+        if not cf.guiOn and traci.simulation.getTime() % cf.update_delay == 0 and verbosity >= Verbosity.NORMAL:
             print("-----------------------------------------------")
             print("Simulation step: " + str(step + 1))
 
@@ -696,7 +706,7 @@ def run():
                         closest_vehicles_dict[incoming_lane] = {"vehicle": closest_vehicle,
                                                                 "distance": distance,
                                                                 "ttc": 10.0}    # car standing still -> no collision
-                    if verbosity == 'v':
+                    if verbosity >= Verbosity.VERBOSE:
                         print("current lane: " + str(incoming_lane))
                         print("veh distance in sec: " + str(closest_vehicles_dict[incoming_lane]["ttc"]))
                         print("time needed to cross :" + str(est_time_needed_to_cross))
@@ -730,7 +740,6 @@ def run():
                     # calculate the probability for the pedestrian to decide to cross the road
                     crossing_probability = -1.0						
                     if options.prob_computation == "normal":
-                        #print("generating crossing prob")
                         crossing_probability = base_automated_vehicle_defiance \
                                            * general_defiance_factors["group_size_defiance_factor"] \
                                            * general_defiance_factors["ttc_defiance_factor"] \
@@ -743,8 +752,7 @@ def run():
                                            * individual_defiance_factors["smombie_defiance_factor"] \
                                            * individual_defiance_factors["waiting_time_defiance_factor"] \
                                            * individual_defiance_factors["attribute_defiance_factor"]
-                    elif  options.prob_computation == "llm":
-                        #print("Generating prompt")
+                    elif options.prob_computation == "llm":
                         combined_prompt = generate_prompt_for_crossing_decision(pedestrian, waiting_pedestrians, crossing_waiting_dict[crossing], 
                         crossing, closest_vehicle_total, group_size, lowest_ttc_total, ehmi)
                         print("The combined_prompt is \"" + combined_prompt + "\"")
@@ -767,12 +775,13 @@ def run():
                                            * individual_defiance_factors["smombie_defiance_factor"] \
                                            * individual_defiance_factors["waiting_time_defiance_factor"] \
                                            * individual_defiance_factors["attribute_defiance_factor"]
-                    print("++++++++++")
-                    print("The calculated probability for " + pedestrian
-                          + " to cross the crossing " + crossing + " is: "
-                          + str(crossing_probability))
+                    if verbosity >= Verbosity.NORMAL:
+                        print("++++++++++")
+                        print("The calculated probability for " + pedestrian
+                              + " to cross the crossing " + crossing + " is: "
+                              + str(crossing_probability))
                     current_random = random.random()
-                    if verbosity == 'v':
+                    if verbosity >= Verbosity.VERBOSE:
                         print("The dice rolled: " + str(current_random))
                     if current_random <= crossing_probability:
                         crossing_decision = 'cross'
@@ -843,26 +852,30 @@ def run():
                         gui.crossing_check(crossing)
 
                     if current_random <= crossing_probability:
-                        print("They decided to cross!")
-                        print("They were waiting for: " + str(waiting_pedestrians[pedestrian]) + " seconds to cross.")
-                        print("Factors influencing the decision in value:")
-                        print("Group size: " + str(general_defiance_factors["group_size_defiance_factor"]))
-                        print("Time to collision: " + str(general_defiance_factors["ttc_defiance_factor"]))
-                        print("Ehmi: " + str(general_defiance_factors["ehmi_defiance_factor"]))
-                        print("Street width: " + str(general_defiance_factors["street_width_defiance_factor"]))
-                        print("Child present: " + str(general_defiance_factors["child_present_defiance_factor"]))
-                        print("Vehicle size: " + str(general_defiance_factors["vehicle_size_defiance_factor"]))
-                        print("Road occupancy rate: " + str(general_defiance_factors["occupancy_rate_defiance_factor"]))
-                        print("Walking momentum: " + str(individual_defiance_factors["ped_speed_defiance_factor"]))
-                        print("Distracted with smartphone: "
-                              + str(individual_defiance_factors["smombie_defiance_factor"]))
-                        print("Waiting time: " + str(waiting_pedestrians[pedestrian]) + " -> "
-                              + str(individual_defiance_factors["waiting_time_defiance_factor"]))
-                        print("Total factor from attributes: "
-                              + str(individual_defiance_factors["attribute_defiance_factor"]))
-                        print("    Gender: " + str(cf.ped_attribute_dict[pedestrian]["gender"]))
-                        print("    Age: " + str(cf.ped_attribute_dict[pedestrian]["age"]))
-                        print("    Vision: " + str(cf.ped_attribute_dict[pedestrian]["vision"]))
+                        if verbosity >= Verbosity.SPARSE:
+                            print(pedestrian + " decided to cross " + crossing)
+                        if verbosity >= Verbosity.NORMAL:
+                            print("They were waiting for: " + str(waiting_pedestrians[pedestrian])
+                                  + " seconds to cross.")
+                            print("Factors influencing the decision in value:")
+                            print("Group size: " + str(general_defiance_factors["group_size_defiance_factor"]))
+                            print("Time to collision: " + str(general_defiance_factors["ttc_defiance_factor"]))
+                            print("Ehmi: " + str(general_defiance_factors["ehmi_defiance_factor"]))
+                            print("Street width: " + str(general_defiance_factors["street_width_defiance_factor"]))
+                            print("Child present: " + str(general_defiance_factors["child_present_defiance_factor"]))
+                            print("Vehicle size: " + str(general_defiance_factors["vehicle_size_defiance_factor"]))
+                            print("Road occupancy rate: "
+                                  + str(general_defiance_factors["occupancy_rate_defiance_factor"]))
+                            print("Walking momentum: " + str(individual_defiance_factors["ped_speed_defiance_factor"]))
+                            print("Distracted with smartphone: "
+                                  + str(individual_defiance_factors["smombie_defiance_factor"]))
+                            print("Waiting time: " + str(waiting_pedestrians[pedestrian]) + " -> "
+                                  + str(individual_defiance_factors["waiting_time_defiance_factor"]))
+                            print("Total factor from attributes: "
+                                  + str(individual_defiance_factors["attribute_defiance_factor"]))
+                            print("    Gender: " + str(cf.ped_attribute_dict[pedestrian]["gender"]))
+                            print("    Age: " + str(cf.ped_attribute_dict[pedestrian]["age"]))
+                            print("    Vision: " + str(cf.ped_attribute_dict[pedestrian]["vision"]))
 
                         try:
                             traci.person.setColor(pedestrian, cf.altered_pedestrian_color)
@@ -924,6 +937,7 @@ def get_new_results_folder():
         return data_output_path
     else:
         return ""
+
 
 def generate_start_config(sumo_binary: str) -> list[str]:
     """
@@ -1077,11 +1091,19 @@ def init_sim():
         cf.run_sim_until_step = options.time_steps
 
     global verbosity
-    verbosity = options.verbosity
+    match options.verbosity:
+        case "none":
+            verbosity = Verbosity.NONE
+        case "sparse":
+            verbosity = Verbosity.SPARSE
+        case "normal":
+            verbosity = Verbosity.NORMAL
+        case "verbose":
+            verbosity = Verbosity.VERBOSE
 
     global crossing_dict
     crossing_dict = create_incoming_lanes_dictionary()
-    if verbosity == 'v':
+    if verbosity >= Verbosity.VERBOSE:
         print("crossing dict: " + str(crossing_dict))
 
     global av_density
