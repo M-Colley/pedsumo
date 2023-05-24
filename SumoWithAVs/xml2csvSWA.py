@@ -15,7 +15,8 @@ the name of a folder located in 'simulation-results'. NAME OF FOLDER CANNOT CONT
 BEFORE USING THIS SCRIPT, ADJUST pythonPath AND xml2csvPath AS IF YOU WERE USING THE TERMINAL(!!!):
 """
 
-pythonPath = "python"  # prompt to use Python on your computer in the command line, can be python 3
+pythonPath = "python"  # prompt to use Python on your computer in the command line, can be python3
+sumoPath = "sumo"
 xml2csvPath = ""  # prompt to use xml2csv.py in your sumo folder on your computer as command line argument
 automaticPathAdjust = True  # set to False, if you want the custom xml2csvPath above to count
 custom_conversion = ["stats.xml", "most.stats.xml"]  # these will have their own converting process (without xml2csv.py)
@@ -78,9 +79,11 @@ if __name__ == "__main__" and path_set_successful:
     # correctly.
     def convert_to_csv(xml_file):
         if xml_file in ["stats.xml", "most.stats.xml"]: # works with SUMO 1.17
+            
             print("Note: If custom conversion of stats.xml causes errors or does not work properly, "
-                  "the simulation most likely ended with errors or SUMO has a new version of the stats.xml file. "
-                  "Remove from custom_conversion list in the latter case. Needed version of SUMO: 1.17.0")
+                  "the simulation most likely ended with errors or SUMO has a new version of the stats.xml file. \n"
+                  "Remove from custom_conversion list in the latter case. \n Needed version of SUMO: >=1.17.0. \n Your version of SUMO is: ")
+            subprocess.run([sumoPath])
             stats_path = os.path.join(folderPath, xml_file)
             tree = ET.parse(stats_path)
             root = tree.getroot()
