@@ -597,8 +597,12 @@ def run():
     random.seed(42)
 
     global results_folder_for_next_sim
-    probabilities_file = open(results_folder_for_next_sim + '/probabilities-'
-                                                            + results_folder_for_next_sim.rsplit('/', 1)[-1] + '.csv', 'w', newline='')
+    #probabilities_file = open(results_folder_for_next_sim + '/probabilities-' + results_folder_for_next_sim.rsplit('/', 1)[-1] + '.csv', 'w', newline='')
+    # this replaces platform-dependent variant above
+    file_name = "probabilities-{}.csv".format(os.path.basename(results_folder_for_next_sim))
+    file_path = os.path.join(results_folder_for_next_sim, file_name)
+    probabilities_file = open(file_path, 'w', newline='')
+
     probabilities_writer = csv.writer(probabilities_file, delimiter=';')
     probabilities_header = ['timestamp', 'step', 'scenario', 'pedestrianID', 'crossingID', 'final_crossing_probability',
                             'effective_final_crossing_probability', 'crossing_decision', 'dangerous_situation',
