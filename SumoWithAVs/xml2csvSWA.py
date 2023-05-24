@@ -80,7 +80,7 @@ if __name__ == "__main__" and path_set_successful:
         if xml_file in ["stats.xml", "most.stats.xml"]: # works with SUMO 1.17
             print("Note: If custom conversion of stats.xml causes errors or does not work properly, "
                   "the simulation most likely ended with errors or SUMO has a new version of the stats.xml file. "
-                  "Remove from custom_conversion list in the latter case.")
+                  "Remove from custom_conversion list in the latter case. Needed version of SUMO: 1.17.0")
             stats_path = os.path.join(folderPath, xml_file)
             tree = ET.parse(stats_path)
             root = tree.getroot()
