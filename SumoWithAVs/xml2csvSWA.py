@@ -106,15 +106,18 @@ if __name__ == "__main__" and path_set_successful:
                         root[8].attrib.get('number'), root[9].attrib.get('number')
                         ]
 
-            header = ["vehicles_inserted","vehicles_loaded","vehicles_running","vehicles_waiting","teleports_jam",
-                    "teleports_total","teleports_wrongLane","teleports_yield","safety_collisions","safety_emergencyStops",
-                    "persons_jammed","persons_loaded","persons_running","personTeleports_abortWait","personTeleports_total",
-                    "personTeleports_wrongDest","vehicleTripStatistics_count","vehicleTripStatistics_departDelay",
-                    "vehicleTripStatistics_departDelayWaiting","vehicleTripStatistics_duration","vehicleTripStatistics_routeLength",
-                    "vehicleTripStatistics_speed","vehicleTripStatistics_timeLoss","vehicleTripStatistics_totalDepartDelay",
-                    "vehicleTripStatistics_totalTravelTime","vehicleTripStatistics_waitingTime","pedestrianStatistics_duration",
-                    "pedestrianStatistics_number","pedestrianStatistics_routeLength","pedestrianStatistics_timeLoss",
-                    "rideStatistics_number","transportStatistics_number"]
+            header = ["performance_clockBegin", "performance_clockEnd", "performance_clockDuration",
+                      "performance_traciDuration", "performance_realTimeFactor", "performance_vehicleUpdatesPerSecond",
+                      "performance_personUpdatesPerSecond", "performance_begin", "performance_end",
+                      "performance_duration", "vehicles_inserted","vehicles_loaded","vehicles_running","vehicles_waiting","teleports_jam",
+                      "teleports_total","teleports_wrongLane","teleports_yield","safety_collisions","safety_emergencyStops",
+                      "persons_jammed","persons_loaded","persons_running","personTeleports_abortWait","personTeleports_total",
+                      "personTeleports_wrongDest","vehicleTripStatistics_count","vehicleTripStatistics_departDelay",
+                      "vehicleTripStatistics_departDelayWaiting","vehicleTripStatistics_duration","vehicleTripStatistics_routeLength",
+                      "vehicleTripStatistics_speed","vehicleTripStatistics_timeLoss","vehicleTripStatistics_totalDepartDelay",
+                      "vehicleTripStatistics_totalTravelTime","vehicleTripStatistics_waitingTime","pedestrianStatistics_duration",
+                      "pedestrianStatistics_number","pedestrianStatistics_routeLength","pedestrianStatistics_timeLoss",
+                      "rideStatistics_number","transportStatistics_number"]
 
             # Construct the path in a platform-independent way
             file_path = os.path.join(folderPath, "stats.csv")
