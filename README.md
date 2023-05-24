@@ -277,7 +277,7 @@ several result files:
 - [ndump.xml](https://sumo.dlr.de/docs/Simulation/Output/RawDump.html)
 - [full.xml](https://sumo.dlr.de/docs/Simulation/Output/FullOutput.html)
 - [amitran.xml](https://sumo.dlr.de/docs/Simulation/Output/AmitranOutput.html)
-- [edgedata.xml and lanedata.xml](https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
+- [edgedata.xml](https://sumo.dlr.de/docs/Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.html)
 - [lanechange.xml](https://sumo.dlr.de/docs/Simulation/Output/Lanechange.html)
 - [queue.xml](https://sumo.dlr.de/docs/Simulation/Output/QueueOutput.html)
 - [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html) (under 'Additional Debugging Outputs')
