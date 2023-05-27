@@ -90,7 +90,11 @@ def get_options():
                                  "Value should be between 0.0 and 1.0 as float.")
     arg_parser.add_argument("--prob_computation", dest="prob_computation", type=str, default="normal", 
                             choices=("normal", "llm"), help="Method to determine the probability for a pedestrian to cross. Options are normal (default) and llm.")
-    
+    arg_parser.add_argument("--transformers_model", dest="transformers_model", type=str, default="declare-lab/flan-alpaca-large",
+                            help="Allows to specify which transformers model to use. Only relevant if prob_computation is set to llm. "
+                            "Attention: Make sure that your hardware supports the model and that the model is supported by the transformers pipeline method.")
+
+
     args = arg_parser.parse_args()
 
     if (args.loop is False) and ((id(args.start_density) != id(default_value))
@@ -597,12 +601,11 @@ def run():
     ehmi = set()
 
     if options.prob_computation == "llm":  
+        print("LLM is used for computation of probabilities to cross")
+        print("The chosen LLM model is: " +options.transformers_model)
         # load model only if that method is chosen
-        # TODO: make configurable
-        #model = pipeline(model="declare-lab/flan-alpaca-xl", device=0)
-        #model = pipeline(model="declare-lab/flan-alpaca-gpt4-xl", device=0)
-        # testing with the smallest model
-        model = pipeline(model="declare-lab/flan-alpaca-large", device=0)
+        # potential choices: declare-lab/flan-alpaca-xl, declare-lab/flan-alpaca-gpt4-xl
+        model = pipeline(model=options.transformers_model, device=0)
         
     random.seed(42)
 
