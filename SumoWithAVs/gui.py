@@ -2,7 +2,7 @@
 import config as cf
 import PySimpleGUI
 import matplotlib.pyplot as plt
-
+import sys
 
 #############################################
 # these are the size parameters for all three GUI windows
