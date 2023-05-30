@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 #############################################
 # these are the size parameters for all three GUI windows
-cGUI_size_x: int = 800  # default = 800
-cGUI_size_y: int = 600  # default = 550
+cGUI_size_x: int = 800 if sys.platform.startswith("darwin") else 1000
+cGUI_size_y: int = 600 if sys.platform.startswith("darwin") else 800
 
 GUI_size_x: int = 500  # default = 500
 GUI_size_y: int = 1040  # default = 840
