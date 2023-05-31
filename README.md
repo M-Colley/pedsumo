@@ -170,6 +170,7 @@ loop options:
                         and 1.0 as float.
   --ehmi {[0.0,1.0]}    default = 0.0. Only useful when combined with the --loop option.Defines the lower bound for the used ehmi_density in the loop. Value should be between 0.0 and 1.0 as float.
   --prob_computation {normal,llm} default = normal. Method to determine the probability for a pedestrian to cross. Options are normal (default) and llm.
+  -- transformers_model default = declare-lab/flan-alpaca-large Allows to specify which transformers model to use. Only relevant if prob_computation is set to llm. Attention: Make sure that your hardware supports the model and that the model is supported by the transformers pipeline method
 ```
 
 Remember: it is sensible to disable the QuickEdit Mode and the Insert Mode (in Windows).
