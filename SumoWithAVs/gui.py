@@ -396,9 +396,12 @@ def __create_cgui() -> PySimpleGUI.Window:
     cguiQuitButton = PySimpleGUI.Button('Quit Application', button_color='Black')
 
     cguiUpdateDelayText = PySimpleGUI.Text('Gui update delay (increase for better performance)          ')
-    cguiUpdateDelayInput = PySimpleGUI.InputText(str(cf.update_delay), key='-ud-')
+    cguiUpdateDelayInput = PySimpleGUI.InputText(str(cf.update_delay), key='-ud-', size=(20, 1))
+    cguiUpdateDelayInputColumn = PySimpleGUI.Column([[cguiUpdateDelayInput]], justification='right')
 
-    cguiLastTimeStepInput = PySimpleGUI.InputText(key='-lts-')
+
+    cguiLastTimeStepInput = PySimpleGUI.InputText(key='-lts-', size=(20, 1), default_text="3600")
+    cguiLastTimeStepInputColumn = PySimpleGUI.Column([[cguiLastTimeStepInput]], justification='right')
     cguiLastTimeStepText = PySimpleGUI.Text('Timestep number up to which the simulation should run.\n' +
                                           'Scenario may not support higher last step.')
 
@@ -411,7 +414,8 @@ def __create_cgui() -> PySimpleGUI.Window:
                                          key='cxml')
 
     cguiNumberOfLoopsText = PySimpleGUI.Text('How many runs of this configuration?')
-    cguiNumberOfLoopsInput = PySimpleGUI.InputText(default_text=1, key='-loop-')
+    cguiNumberOfLoopsInput = PySimpleGUI.InputText(default_text=1, key='-loop-', size=(20, 1))
+    cguiNumberOfLoopsInputColumn = PySimpleGUI.Column([[cguiNumberOfLoopsInput]], justification='right')
     cguiCurrentLoopsNumber = PySimpleGUI.Text('Currently added: ' + str(num_of_loops), key='-num_loops-')
     cguiAddLoopButton = PySimpleGUI.Button('Add Configuration to Loop')
 
@@ -423,10 +427,10 @@ def __create_cgui() -> PySimpleGUI.Window:
                    [PySimpleGUI.Text()],
                    [switch_button, sumogui_button, convert_xml_button],
                    [cguiAddLoopButton, cguiCurrentLoopsNumber],
-                   [cguiNumberOfLoopsText, cguiNumberOfLoopsInput],
+                   [cguiNumberOfLoopsText, cguiNumberOfLoopsInputColumn],
                    [PySimpleGUI.Text()],
-                   [cguiUpdateDelayText, cguiUpdateDelayInput],
-                   [cguiLastTimeStepText, cguiLastTimeStepInput],
+                   [cguiUpdateDelayText, cguiUpdateDelayInputColumn],
+                   [cguiLastTimeStepText, cguiLastTimeStepInputColumn],
                    [PySimpleGUI.Text()],
                    [PySimpleGUI.Text(numeric_error_msg + "Adjust config values. Must be numbers.")],
                    [adjust_values_column],
@@ -572,13 +576,6 @@ def run_cgui() -> str:
     while True:
         event, values = cgui.read(timeout=5)
 
-        cgui.Element('-num_loops-').update('Currently added: ' + str(num_of_loops))
-
-        if num_of_loops != 0:
-            cgui.Element('ss').update("Start Loop")
-        else:
-            cgui.Element('ss').update('Start Simulation')
-
         # get next config in loop data
         if event == 'ss' and not in_loop and len(loop_data) != 0 or len(loop_data) != 0 and in_loop:
             if not in_loop:
@@ -613,7 +610,7 @@ def run_cgui() -> str:
             return 'sim_start'
 
         # add config to loop data if button is pressed
-        if event == "Add Configuration to Loop" and values['-selectedscen-'] != '':
+        if event == "Add Configuration to Loop" and len(values['-selectedscen-']) != 0:
             try:
                 for i in range(int(values['-loop-'])):
                     num_of_loops += 1
@@ -632,6 +629,13 @@ def run_cgui() -> str:
         if event == PySimpleGUI.WINDOW_CLOSED or event == 'Quit Application':
             close_cgui()
             return 'closed'
+
+        cgui.Element('-num_loops-').update('Currently added: ' + str(num_of_loops))
+
+        if num_of_loops != 0:
+            cgui.Element('ss').update("Start Loop")
+        else:
+            cgui.Element('ss').update('Start Simulation')
 
         # start simulation and adjust all given values
         if event == 'ss' and values['-selectedscen-'] != '' and num_of_loops == 0:
@@ -682,6 +686,7 @@ def close_cgui() -> None:
     if not (cgui == None):
         cgui.close()
         cgui = None
+        return 'closed'
 
 
 def get_scenario_name(path: str) -> str:
