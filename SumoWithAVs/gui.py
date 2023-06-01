@@ -3,17 +3,31 @@ import config as cf
 import PySimpleGUI
 import matplotlib.pyplot as plt
 import sys
+from screeninfo import get_monitors
 
 #############################################
 # these are the size parameters for all three GUI windows
-cGUI_size_x: int = 800 if sys.platform.startswith("darwin") else 1000
-cGUI_size_y: int = 600 if sys.platform.startswith("darwin") else 800
 
-GUI_size_x: int = 500  # default = 500
-GUI_size_y: int = 1040  # default = 840
+monitor_size_x : int = 0
+monitor_size_y : int = 0
 
-dv_size_x: int = 12  # default = 12
-dv_size_y: int = 5  # default = 5
+for monitor in get_monitors():
+    if monitor_size_x < monitor.width:
+        monitor_size_x = monitor.width
+    if monitor_size_y < monitor.height:
+        monitor_size_y = monitor.height
+
+monitor_size_x = int(monitor_size_x / 2)
+monitor_size_y = monitor_size_y
+
+cGUI_size_x: int = monitor_size_x  # 800 if sys.platform.startswith("darwin") else 1000
+cGUI_size_y: int = monitor_size_y  # 600 if sys.platform.startswith("darwin") else 800
+
+GUI_size_x: int = monitor_size_x  # 500
+GUI_size_y: int = monitor_size_y  # 1040
+
+dv_size_x: int = int(monitor_size_x / 50)  # 12  # data visualization
+dv_size_y: int = int(monitor_size_y / 200)  # 5  # data visualization
 
 #############################################
 
