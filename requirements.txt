@@ -4,7 +4,7 @@ torch>=2.0.0+cu117
 PySimpleGUI
 matplotlib
 pandas>=2.0.2
-transformers>=4.29.2
+transformers>=4.30.0
 numpy
 torchvision
 torchaudio
