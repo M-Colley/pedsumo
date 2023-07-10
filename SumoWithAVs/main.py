@@ -1077,6 +1077,7 @@ def init_sim():
     global ehmi_density
     global base_automated_vehicle_defiance
 
+    # define relevant parameters depending on the use of the loop parameter
     if options.loop:
         av_density = options.start_density
         base_automated_vehicle_defiance = options.start_defiance
@@ -1084,36 +1085,10 @@ def init_sim():
         av_step_size = options.av_step_size
         ehmi_step_size = options.ehmi_step_size
         defiance_step_size = options.defiance_step_size
-
-        while av_density <= 1.0:
-            while ehmi_density <= 1.0:
-                while base_automated_vehicle_defiance <= 1.0:
-                    if av_density == options.start_density \
-                            and base_automated_vehicle_defiance == options.start_defiance \
-                            and ehmi_density == options.start_ehmi:
-                        run()
-                    else:
-                        results_folder_for_next_sim = get_new_results_folder()
-                        traci_start_config = generate_start_config(sumo_binary)
-                        traci.start(traci_start_config)
-                        run()
-                    if defiance_step_size == 0.0:
-                        break
-                    base_automated_vehicle_defiance += defiance_step_size
-                base_automated_vehicle_defiance = options.start_defiance
-                if ehmi_step_size == 0.0:
-                    break
-                ehmi_density += ehmi_step_size
-            ehmi_density = options.start_ehmi
-            base_automated_vehicle_defiance = options.start_defiance
-            if av_step_size == 0.0:
-                break
-            av_density += av_step_size
     else:
         av_density = cf.av_density
         ehmi_density = cf.ehmi_density
         base_automated_vehicle_defiance = cf.base_automated_vehicle_defiance
-        run()
 
     # create new folder and save path to put results into folder later. If folder with
     # same name exists -> interrupt initialization
@@ -1151,6 +1126,35 @@ def init_sim():
     crossing_dict = create_incoming_lanes_dictionary()
     if verbosity >= Verbosity.VERBOSE:
         print("crossing dict: " + str(crossing_dict))
+
+
+    if options.loop:
+        while av_density <= 1.0:
+            while ehmi_density <= 1.0:
+                while base_automated_vehicle_defiance <= 1.0:
+                    if av_density == options.start_density \
+                            and base_automated_vehicle_defiance == options.start_defiance \
+                            and ehmi_density == options.start_ehmi:
+                        run()
+                    else:
+                        results_folder_for_next_sim = get_new_results_folder()
+                        traci_start_config = generate_start_config(sumo_binary)
+                        traci.start(traci_start_config)
+                        run()
+                    if defiance_step_size == 0.0:
+                        break
+                    base_automated_vehicle_defiance += defiance_step_size
+                base_automated_vehicle_defiance = options.start_defiance
+                if ehmi_step_size == 0.0:
+                    break
+                ehmi_density += ehmi_step_size
+            ehmi_density = options.start_ehmi
+            base_automated_vehicle_defiance = options.start_defiance
+            if av_step_size == 0.0:
+                break
+            av_density += av_step_size
+    else:
+        run()
 
 
 def prepare_sim():
