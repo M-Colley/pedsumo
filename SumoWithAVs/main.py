@@ -1071,44 +1071,8 @@ def init_sim():
     if options.scenario_path:
         cf.sumocfgPath = options.scenario_path
         scenario = options.scenario_path
-
-    # create new folder and save path to put results into folder later. If folder with
-    # same name exists -> interrupt initialization
-    global results_folder_for_next_sim
-    results_folder_for_next_sim = get_new_results_folder()
-    if results_folder_for_next_sim == "":
-        return
-
-    traci_start_config = generate_start_config(sumo_binary)
-
-    traci.start(traci_start_config)
-
-    if cf.run_sim_until_step == -1 and traci.simulation.getEndTime() != -1.0: # -1 -> no new last timestep was given through cgui before simulation
-        # take last timestep from sumocfg of scenario
-        cf.run_sim_until_step = traci.simulation.getEndTime()
-    elif cf.run_sim_until_step == -1 and traci.simulation.getEndTime() == -1.0:
-        # cf.run_sim_until_step = 100000 # if no last timestep is found anywhere, run until step 100k if not stopped
-        cf.run_sim_until_step = 3600 # if no last timestep is found anywhere, run until step 3600 if not stopped
-
-    if options.time_steps:
-        cf.run_sim_until_step = options.time_steps
-
-    global verbosity
-    match options.verbosity:
-        case "none":
-            verbosity = Verbosity.NONE
-        case "sparse":
-            verbosity = Verbosity.SPARSE
-        case "normal":
-            verbosity = Verbosity.NORMAL
-        case "verbose":
-            verbosity = Verbosity.VERBOSE
-
-    global crossing_dict
-    crossing_dict = create_incoming_lanes_dictionary()
-    if verbosity >= Verbosity.VERBOSE:
-        print("crossing dict: " + str(crossing_dict))
-
+   
+   
     global av_density
     global ehmi_density
     global base_automated_vehicle_defiance
@@ -1150,6 +1114,43 @@ def init_sim():
         ehmi_density = cf.ehmi_density
         base_automated_vehicle_defiance = cf.base_automated_vehicle_defiance
         run()
+
+    # create new folder and save path to put results into folder later. If folder with
+    # same name exists -> interrupt initialization
+    global results_folder_for_next_sim
+    results_folder_for_next_sim = get_new_results_folder()
+    if results_folder_for_next_sim == "":
+        return
+
+    traci_start_config = generate_start_config(sumo_binary)
+
+    traci.start(traci_start_config)
+
+    if cf.run_sim_until_step == -1 and traci.simulation.getEndTime() != -1.0: # -1 -> no new last timestep was given through cgui before simulation
+        # take last timestep from sumocfg of scenario
+        cf.run_sim_until_step = traci.simulation.getEndTime()
+    elif cf.run_sim_until_step == -1 and traci.simulation.getEndTime() == -1.0:
+        # cf.run_sim_until_step = 100000 # if no last timestep is found anywhere, run until step 100k if not stopped
+        cf.run_sim_until_step = 3600 # if no last timestep is found anywhere, run until step 3600 if not stopped
+
+    if options.time_steps:
+        cf.run_sim_until_step = options.time_steps
+
+    global verbosity
+    match options.verbosity:
+        case "none":
+            verbosity = Verbosity.NONE
+        case "sparse":
+            verbosity = Verbosity.SPARSE
+        case "normal":
+            verbosity = Verbosity.NORMAL
+        case "verbose":
+            verbosity = Verbosity.VERBOSE
+
+    global crossing_dict
+    crossing_dict = create_incoming_lanes_dictionary()
+    if verbosity >= Verbosity.VERBOSE:
+        print("crossing dict: " + str(crossing_dict))
 
 
 def prepare_sim():
