@@ -1076,6 +1076,7 @@ def init_sim():
    
     global av_density
     global ehmi_density
+    global defiance_step_size
     global base_automated_vehicle_defiance
 
     # define relevant parameters depending on the use of the loop parameter
@@ -1089,6 +1090,7 @@ def init_sim():
     else:
         av_density = cf.av_density
         ehmi_density = cf.ehmi_density
+	defiance_step_size = 0
         base_automated_vehicle_defiance = cf.base_automated_vehicle_defiance
 
     # create new folder and save path to put results into folder later. If folder with
