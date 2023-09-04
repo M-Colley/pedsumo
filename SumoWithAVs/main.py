@@ -8,9 +8,14 @@ import argparse
 import csv
 from enum import IntEnum
 import config as cf
-import gui
-from transformers import pipeline
+#import gui
 import xml2csvSWA
+import importlib.util
+try:
+  from transformers import pipeline
+except:
+  pipeline = None
+
 
 # we need to import some python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -605,6 +610,8 @@ def run():
         print("The chosen LLM model is: " +options.transformers_model)
         # load model only if that method is chosen
         # potential choices: declare-lab/flan-alpaca-xl, declare-lab/flan-alpaca-gpt4-xl
+        transformers_spec = importlib.util.find_spec("transformers")
+        found_transformers = transformers_spec is not None
         model = pipeline(model=options.transformers_model, device=0)
         
     random.seed(42)
@@ -756,6 +763,9 @@ def run():
                                            * individual_defiance_factors["waiting_time_defiance_factor"] \
                                            * individual_defiance_factors["attribute_defiance_factor"]
                     elif options.prob_computation == "llm":
+                        if not found_transformers:
+                            print("You have chosen method llm but transformers is not available, aborting.")
+                            sys.exit()
                         combined_prompt = generate_prompt_for_crossing_decision(pedestrian, waiting_pedestrians, crossing_waiting_dict[crossing], 
                         crossing, closest_vehicle_total, group_size, lowest_ttc_total, ehmi)
                         print("The combined_prompt is \"" + combined_prompt + "\"")
@@ -778,6 +788,7 @@ def run():
                                            * individual_defiance_factors["smombie_defiance_factor"] \
                                            * individual_defiance_factors["waiting_time_defiance_factor"] \
                                            * individual_defiance_factors["attribute_defiance_factor"]
+                                     
                     if verbosity >= Verbosity.NORMAL:
                         print("++++++++++")
                         print("The calculated probability for " + pedestrian
@@ -936,6 +947,7 @@ def get_new_results_folder():
     #data_output_path = cf.resultsFolderPath + "/" + get_current_simulation_name() + "-avd" + str(cf.av_density) + "-ed" + str(cf.ehmi_density) + "-" + time.strftime("%Y%m%d-%H%M%S")
     #data_output_path = os.path.join(cf.resultsFolderPath,"{}-avd{}-ed{}-{}".format(get_current_simulation_name(), av_density, ehmi_density, time.strftime("%Y%m%d-%H%M%S")))
     data_output_path = os.path.join(cf.resultsFolderPath, "{}-avd{}-ed{}-dss{}-{}".format(get_current_simulation_name(), av_density, ehmi_density, defiance_step_size, time.strftime("%Y%m%d-%H%M%S")))
+
     if not os.path.exists(data_output_path):
         os.makedirs(data_output_path)
         return data_output_path
@@ -1090,7 +1102,7 @@ def init_sim():
     else:
         av_density = cf.av_density
         ehmi_density = cf.ehmi_density
-	defiance_step_size = 0
+        defiance_step_size = 0
         base_automated_vehicle_defiance = cf.base_automated_vehicle_defiance
 
     # create new folder and save path to put results into folder later. If folder with
