@@ -1,11 +1,5 @@
---find-links https://download.pytorch.org/whl/torch_stable.html
-
-torch>=2.0.0+cu117
 PySimpleGUI
-matplotlib>=3.7.2
+matplotlib==3.5.2
 pandas>=2.1.0
-transformers>=4.32.1
 numpy>=1.25.2
-torchvision
-torchaudio
 screeninfo
