@@ -8,7 +8,7 @@ import argparse
 import csv
 from enum import IntEnum
 import config as cf
-#import gui
+import gui
 import xml2csvSWA
 import importlib.util
 try:
