@@ -74,6 +74,13 @@ git clone https://gitlab-mi.informatik.uni-ulm.de/ehmi/sumo-se-2022.git
 ```console
 pip install -r [path to requirements.txt of this project]
 ```
+
+5. Install Transformers and depencies if you want to use LLMs. 
+
+```console
+pip install -r [path to requirements_llm.txt of this project]
+```
+
 in the console (e.g., `Command Prompt` in Windows. You may have to use `pip3` if `pip` does not work.)
 
 Resources of this project are SUMO scenarios. 'Scenario' may refer to all files needed to run a simulation or it may refer to the simulation map itself. Available scenarios where mentioned above.
