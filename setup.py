@@ -30,6 +30,7 @@ setup(
           'pandas',
           'numpy',
           'PySimpleGUI',
+          'screeninfo',
           'matplotlib',
           'transformers',
           'torch',
