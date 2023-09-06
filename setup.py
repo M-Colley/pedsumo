@@ -14,7 +14,7 @@ except:
 
 
 setup(
-  name = 'SAVP',         # How you named your package folder (MyLib)
+  name = 'PedSUMO',         # How you named your package folder (MyLib)
   packages = find_packages(),   # Chose the same as "name"
   version = '0.0.1',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
@@ -22,10 +22,10 @@ setup(
   long_description=long_description,
   long_description_content_type='text/markdown',
   author = 'Mark Colley',                   # Type in your name
-  author_email = 'mark.colley@yahoo.de',      # Type in your E-Mail
-  url = 'https://github.com/M-Colley/sumo-automated-vehicles-and-pedestrians/',   # Provide either the link to your github or to your website
+  author_email = 'todo@yahoo.de',      # Type in your E-Mail
+  url = 'TODO',   # Provide either the link to your github or to your website
   download_url = '',   # I explain this later on
-  keywords = ['Home Office', 'Multi-Perspective'],   # Keywords that define your package best
+  keywords = ['simulation', 'pedestrian', 'automated-vehicles', 'ehmi', 'llm'],   # Keywords that define your package best
   install_requires=[            # I get to this in a second
           'pandas',
           'numpy',
