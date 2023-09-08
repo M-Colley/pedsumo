@@ -1116,11 +1116,7 @@ def init_sim():
 
     traci.start(traci_start_config)
 
-    if cf.run_sim_until_step == -1 and traci.simulation.getEndTime() != -1.0: # -1 -> no new last timestep was given through cgui before simulation
-        # take last timestep from sumocfg of scenario
-        cf.run_sim_until_step = traci.simulation.getEndTime()
-    elif cf.run_sim_until_step == -1 and traci.simulation.getEndTime() == -1.0:
-        # cf.run_sim_until_step = 100000 # if no last timestep is found anywhere, run until step 100k if not stopped
+    if cf.run_sim_until_step == -1:
         cf.run_sim_until_step = 3600 # if no last timestep is found anywhere, run until step 3600 if not stopped
 
     if options.time_steps:
