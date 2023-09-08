@@ -102,8 +102,7 @@ data visualization during the simulation (scroll further down for more informati
 You can also change how many timesteps (1 processed timestep equals
 the simulation of a second in the real world) between each 
 update of the GUI during the simulation there are (more information further down). Also, adjust at what timestep
-you want the simulation to end automatically if needed. If no value is given, SUMO will take the one specified in the
-`.sumocfg` file of the scenario and if there is no end time found, the simulation will stop at timestep 3600.
+you want the simulation to end automatically if needed. If no value is given, the simulation will stop at timestep 3600.
 
 In the bottom section, you can adjust several variables that affect the probability of pedestrians to ignore AVs
 at unprioritized crossings.
@@ -137,7 +136,7 @@ five different attributes and the other shows age groups:
 <img src="resources/IMAGES/screenshot_dv.png"  width="90%" height="20%">
 
 ### Using the Command Line
-The command line is primarily useful for the looping functionality (if you want to simulate a scenario several times in a row automatically). Note that the command line runs simulations to timestep 3600 (1 hour in the real world) by default if not defined otherwise in the simulated scenario's `.sumocfg` file.
+The command line is primarily useful for the looping functionality (if you want to simulate a scenario several times in a row automatically). Note that the command line runs simulations to timestep 3600 (1 hour in the real world) by default if not specified.
 
 In order to use the command line, execute main.py using Python 3 (the `python` command can be, if configured, also `python3`):
 ```console
