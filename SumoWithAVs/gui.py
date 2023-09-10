@@ -58,7 +58,7 @@ recent_sim_msg = ""  # log message from the most recent sim, displayed in the cg
 current_sim = ""  # current running scenario. "" if simulation inactive.
 current_traci_step = 0
 
-current_crossing_events = 0
+#current_crossing_events = 0
 
 number_of_people = 0
 
@@ -215,8 +215,8 @@ def reset_numbers() -> None:
     recent_sim_msg = ""
     global current_traci_step
     current_traci_step = 0
-    global current_crossing_events
-    current_crossing_events = 0
+    #global current_crossing_events
+    #current_crossing_events = 0
     global number_of_people
     number_of_people = 0
     global women_crossed

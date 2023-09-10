@@ -15,9 +15,16 @@ scenarios = [["Small_Test_Network", os.path.join("..", "resources", "testNetwork
              ["Manhattan", os.path.join("..", "resources", "manhattan", "manhattan.sumocfg")]
              ]
 
+
 sumo_GuiOn = False  # turns sumo's own gui on or off (True = on)
 guiOn = True  # turns configuration gui before the simulation and simulation gui on or off (True = on)
 visualization_shown = False  # turns on visual display of statistics during simulation
+
+#multithreading - ONLY set one of the following booleans to True if you use multithreading
+multithreading_rerouting_active = False
+rerouting_threads = 1
+multithreading_routing_active = False
+routing_threads = 1
 
 update_delay = 50  # delay after which gui updates data or terminal outputs simulation step
 run_sim_until_step = -1  # Specified timestep until the simulation will run. Default should always be -1.

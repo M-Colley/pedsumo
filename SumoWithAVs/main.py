@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 from datetime import datetime
+import datetime as dt
 import time
 import os
 import random
 import sys
 import argparse
+import time
 import csv
 from enum import IntEnum
 import config as cf
 import gui
 import xml2csvSWA
+# only import if available
 import importlib.util
 try:
   from transformers import pipeline
 except:
   pipeline = None
-
 
 # we need to import some python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -648,6 +650,10 @@ def run():
                             'attribute_defiance_factor', 'probability_estimation_method']
     probabilities_writer.writerow(probabilities_header)
 
+    sim_start_time = time.perf_counter()
+
+    crossing_incidents = 0
+
     while traci.simulation.getTime() <= cf.run_sim_until_step:      # start of the main simulation loop
 
         if cf.guiOn:
@@ -788,7 +794,6 @@ def run():
                                            * individual_defiance_factors["smombie_defiance_factor"] \
                                            * individual_defiance_factors["waiting_time_defiance_factor"] \
                                            * individual_defiance_factors["attribute_defiance_factor"]
-                                     
                     if verbosity >= Verbosity.NORMAL:
                         print("++++++++++")
                         print("The calculated probability for " + pedestrian
@@ -855,11 +860,12 @@ def run():
                         print("Error: probabilities.csv row not written.")
 
                     # Count up numbers in gui.py
+                    crossing_incidents += 1
                     if cf.guiOn:
                         crossed = False
                         if crossing_decision == 'cross':
                             crossed = True
-                        gui.current_crossing_events += 1
+                        #gui.current_crossing_events += 1
                         gui.gndr_check(cf.ped_attribute_dict[pedestrian]["gender"], crossed)
                         gui.vision_check(cf.ped_attribute_dict[pedestrian]["vision"], crossed)
                         gui.age_check(cf.ped_attribute_dict[pedestrian]["age"], crossed)
@@ -908,6 +914,9 @@ def run():
 
         step += 1
 
+    sim_end_time = time.perf_counter()
+    time_elapsed = int(sim_end_time - sim_start_time)
+    print("Simulation " + get_current_simulation_name() + " lasted " + str(dt.timedelta(seconds=time_elapsed)) + " and " + str(crossing_incidents) + " crossing incidents occured.")
     probabilities_file.close()
     end_simulation()
 
@@ -1023,6 +1032,13 @@ def generate_start_config(sumo_binary: str) -> list[str]:
         if cf.personinfoOutput:
             traci_start_config.append("--personinfo-output")
             traci_start_config.append(os.path.join(results_folder_for_next_sim, "personinfo.xml"))
+
+    if cf.multithreading_rerouting_active:
+        traci_start_config.append("--device.rerouting.threads")
+        traci_start_config.append(str(cf.rerouting_threads))
+    elif cf.multithreading_routing_active:
+        traci_start_config.append("--routing-threads")
+        traci_start_config.append(str(cf.routing_threads))
 
     traci_start_config.append("--start")
     traci_start_config.append("--quit-on-end")
