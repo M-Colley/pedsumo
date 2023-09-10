@@ -19,7 +19,7 @@ after each simulation using different variables (such as density of AVs in traff
 We always tried to make factors (probabilities, numbers, values, calculations, etc.) impacting traffic as reasonable and factual as possible. For that, we either used scientific resources or made educated guesses.
 
 ### Frameworks and Libraries
-- [SUMO](https://www.eclipse.org/sumo/) (version 1.17.0 or 1.18.0) 
+- [SUMO](https://www.eclipse.org/sumo/) (version 1.17.0, 1.18.0, and nightly builds as of September 10, 2023) 
     1. traci (python package)
     2. sumolib (python package)
 - [Python 3](https://www.python.org/about/)
