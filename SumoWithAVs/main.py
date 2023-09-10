@@ -946,7 +946,7 @@ def get_current_simulation_name() -> str:
 def get_new_results_folder():
     #data_output_path = cf.resultsFolderPath + "/" + get_current_simulation_name() + "-avd" + str(cf.av_density) + "-ed" + str(cf.ehmi_density) + "-" + time.strftime("%Y%m%d-%H%M%S")
     #data_output_path = os.path.join(cf.resultsFolderPath,"{}-avd{}-ed{}-{}".format(get_current_simulation_name(), av_density, ehmi_density, time.strftime("%Y%m%d-%H%M%S")))
-    data_output_path = os.path.join(cf.resultsFolderPath, "{}-avd{}-ed{}-dss{}-{}".format(get_current_simulation_name(), av_density, ehmi_density, defiance_step_size, time.strftime("%Y%m%d-%H%M%S")))
+    data_output_path = os.path.join(cf.resultsFolderPath, "{}-avd{:.3f}-ed{:.3f}-dss{:.3f}-{}".format(get_current_simulation_name(), av_density, ehmi_density, defiance_step_size, time.strftime("%Y%m%d-%H%M%S")))
 
     if not os.path.exists(data_output_path):
         os.makedirs(data_output_path)
