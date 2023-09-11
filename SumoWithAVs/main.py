@@ -56,6 +56,10 @@ def get_options():
                             help="Defines the amount of seconds simulated, after which the simulation will terminate. "
                                  "Does not equal real time seconds. A value of 3600 would mean that one hour would get "
                                  "simulated.")
+    arg_parser.add_argument("--routing-threads", dest="routing_threads", type=str,
+                            help="Activates routing multithreading. Needs number of cores to utilize.")
+    arg_parser.add_argument("--rerouting-threads", dest="rerouting_threads", type=str,
+                            help="Activates rerouting multithreading. Needs number of cores to utilize.")
     loop_group.add_argument("-l", "--loop", action="store_true", dest="loop", default=False,
                             help="run the simulation multiple times in a row, looping through av_density, ehmi_density "
                                  "and base_automated_vehicle_defiance.")
@@ -1100,8 +1104,14 @@ def init_sim():
     if options.scenario_path:
         cf.sumocfgPath = options.scenario_path
         scenario = options.scenario_path
-   
-   
+
+    if options.routing_threads:
+        cf.multithreading_routing_active = True
+        cf.routing_threads = options.routing_threads
+    elif options.rerouting_threads:
+        cf.multithreading_rerouting_active = True
+        cf.rerouting_threads = options.rerouting_threads
+
     global av_density
     global ehmi_density
     global defiance_step_size
