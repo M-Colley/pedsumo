@@ -1105,6 +1105,9 @@ def init_sim():
         cf.sumocfgPath = options.scenario_path
         scenario = options.scenario_path
 
+    if options.routing_threads and options.rerouting_threads:
+        sys.exit("Can only choose either routing or rerouting as multithread options.")
+
     if options.routing_threads:
         cf.multithreading_routing_active = True
         cf.routing_threads = options.routing_threads
