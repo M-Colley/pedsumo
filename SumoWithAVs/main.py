@@ -591,7 +591,7 @@ def generate_prompt_for_crossing_decision(pedestrian: str, waiting_pedestrians: 
 	
     prompt_street_width = "The street is " + str(round(traci.lane.getLength(crossing + "_0"), 4)) + " meters wide. "
     prompt_vehicle_size= "The vehicle has a front area of " + str(traci.vehicle.getWidth(closest_vehicle) * traci.vehicle.getHeight(closest_vehicle)) + " square meter. "
-    prompt_group_size = "Your are in a group of " + str(group_size) + " people. "
+    prompt_group_size = "You are in a group of " + str(group_size) + " people. "
     prompt_ttc = "The time until the vehicle is where you are is approximately " + str(round(lowest_ttc_total, 4)) + " seconds. "
 
     prompt_instruction = "Instruction: Determine the hypothetical probability for you to cross in this scenario. Give a numeric value in the range of 0.0 (not going to cross at all) to 1.0 (definitely crossing). Your answer MUST be a single numerical value, no text. Only provide the first five digits. Do NOT add text."
