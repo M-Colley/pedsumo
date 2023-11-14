@@ -1,4 +1,4 @@
-# Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
+# PedSUMO - Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
 
 ## Introduction
 
@@ -9,17 +9,17 @@ continuous multi-modal traffic simulation package designed to handle large netwo
 This project concerns the effects of automated vehicles (AVs) in traffic and how their interaction with pedestrians lead
 to different (especially negative) outcomes when it comes to the fluent movement
 of traffic. Using SUMO, this is done by making different attributes of pedestrians
-such as age and gender affect their decision taking, making them more or less likely to respect the priority of AVs
-at unprioritized crossings. If by chance a pedestrian decides to ignore the AV and cross the street at an unintended
+such as age and gender, affect their decision-making, making them more or less likely to respect the priority of AVs
+at unprioritized crossings. If, by chance, a pedestrian decides to ignore the AV and cross the street at an unintended
 place, the AV (realistically) has to stop. When this happens at a larger scale and an increasing number of AVs
-in public traffic, this will result in less favorable real world scenarios. This effect is stronger with an increasing number of AVs with an external human-machine interface (eHMI) as an eHMI serves as a communication between the human and the vehicles, contributing to higher feeling of safety around AVs. \
+in public traffic, this will result in less favorable real-world scenarios. This effect is stronger with an increasing number of AVs with an external human-machine interface (eHMI) as an eHMI serves as a communication between the human and the vehicles, contributing to a higher feeling of safety around AVs. \
 This project seeks to measure these changes
 after each simulation using different variables (such as density of AVs in traffic), so that they can be evaluated.
 
 We always tried to make factors (probabilities, numbers, values, calculations, etc.) impacting traffic as reasonable and factual as possible. For that, we either used scientific resources or made educated guesses.
 
 ### Frameworks and Libraries
-- [SUMO](https://www.eclipse.org/sumo/) (version 1.17.0, 1.18.0, and nightly builds as of October 05, 2023) 
+- [SUMO](https://www.eclipse.org/sumo/) (version 1.17.0, 1.18.0, and 1.19.0) 
     1. traci (python package)
     2. sumolib (python package)
 - [Python 3](https://www.python.org/about/) (tested with version 3.11 and 3.12)
@@ -34,9 +34,9 @@ Generally, we use the latest versions of each package to improve speed and accur
 
 ### Added Features
 - Addition of AV priority-ignore behavior in pedestrians
-    1. Priority of AVs can now be ignored by pedestrians. They can ignore AVs at unprioritized crossings (crossings where nobody should actually cross the street). The likelihood of a pedestrian to ignore an AV is determined by certain factors:
-    2. We added age, gender (male, female, other) and vision health (healthy or impaired) to pedestrians. The probability of an attribute to be applied to a pedestrian can be changed. Their impact on pedestrian priority-respect behavior can also be adjusted.
-    3. Now there are various changeable factors ('defiance values') that impact the decision taking of pedestrians. These factors are used to realistically calculate values to influence their interaction with AVs.
+    1. Priority of AVs can now be ignored by pedestrians. They can ignore AVs at unprioritized crossings (crossings where nobody should actually cross the street). The likelihood of a pedestrian ignoring an AV is determined by certain factors:
+    2. We added age, gender (male, female, other), and vision health (healthy or impaired) to pedestrians. The probability of an attribute to be applied to a pedestrian can be changed. Their impact on pedestrian priority-respect behavior can also be adjusted.
+    3. Now, there are various changeable factors ('defiance values') that impact the decision-making of pedestrians. These factors are used to calculate values to influence their interaction with AVs realistically.
 - Adjusted (part of) several maps ("scenarios") to work with our code (https://sumo.dlr.de/docs/Data/Scenarios.html):
     1. small test scenario
     2. Ingolstadt
@@ -47,10 +47,10 @@ Generally, we use the latest versions of each package to improve speed and accur
     7. Manhattan (very processor-intensive)
 - Increased usability
     1. We added a configuration GUI for easy customization of values and easy simulation of several scenarios in a row
-    2. We added a user friendly GUI with additional data visualization to provide information during simulation time
+    2. We added a user-friendly GUI with additional data visualization to provide information during simulation time
     3. We added command line functionality with looping, allowing for several simulations in a row without interruption
-    4. Addition of result files after a simulation and quick conversion of all xml result files of a simulation to csv.
-- Usage of LLMs to derive a crossing decision: We currently use [flan-alpaca-large](https://huggingface.co/declare-lab/flan-alpaca-large) but recommend [flan-alpaca-gpt4-xl](https://huggingface.co/declare-lab/flan-alpaca-gpt4-xl) if you have sufficient compute and RAM. `Attention: Highly Experimental and a CUDA graphics card is required`
+    4. Addition of result files after a simulation and quick conversion of all XML result files of a simulation to CSV.
+- Usage of LLMs to derive a crossing decision: We currently use [flan-alpaca-large](https://huggingface.co/declare-lab/flan-alpaca-large) but recommend [flan-alpaca-gpt4-xl](https://huggingface.co/declare-lab/flan-alpaca-gpt4-xl) if you have sufficient compute and RAM. `Attention: Highly Experimental and a CUDA graphics card is required.`
 
 ## How to Start
 
@@ -75,7 +75,7 @@ git clone https://gitlab-mi.informatik.uni-ulm.de/ehmi/sumo-se-2022.git
 pip install -r [path to requirements.txt of this project]
 ```
 
-5. Install Transformers and depencies if you want to use LLMs. 
+5. Install Transformers and dependencies if you want to use LLMs. 
 
 ```console
 pip install -r [path to requirements_llm.txt of this project]
@@ -83,9 +83,9 @@ pip install -r [path to requirements_llm.txt of this project]
 
 in the console (e.g., `Command Prompt` in Windows. You may have to use `pip3` if `pip` does not work.)
 
-Resources of this project are SUMO scenarios. 'Scenario' may refer to all files needed to run a simulation or it may refer to the simulation map itself. Available scenarios where mentioned above.
+The resources of this project are SUMO scenarios. 'Scenario' may refer to all files needed to run a simulation, or it may refer to the simulation map itself. Available scenarios were mentioned above.
 
-There are two options to use the program: via a GUI or command line. You can technically start SumoWithAVs without the command line or GUI (by setting `guiOn` and `sumo_GuiOn` to `False` in `config.py` and running `main.py`) but this is generally not advised. If you do, make sure to include an `end value` for a timestep in the `.sumocfg` of the scenario or else the simulation will always stop at 3600 timesteps. Example:
+There are two options to use the program: via a GUI or command line. You can technically start SumoWithAVs without the command line or GUI (by setting `guiOn` and `sumo_GuiOn` to `False` in `config.py` and running `main.py`), but this is generally not advised. If you do, make sure to include an `end value` for a timestep in the `.sumocfg` of the scenario, or else the simulation will always stop at 3600 timesteps. Example:
 ```xml
     <time>
       <end value="4500"/>
@@ -112,18 +112,18 @@ You can use SUMO's GUI by ticking the box next to "SUMO's GUI". This will show y
 Press 'Start Simulation' if you want to simulate the scenario.
 
 You can also use the loop functionality:
-1. Adjust the configuration data as you please (including update delay and the last simulation step).
+1. Adjust the configuration data as you please (including the update delay and the last simulation step).
 2. Click on "Add Configuration to Loop". This will change the "Start Simulation" button to "Start Loop" and your current scenario with its configurations will be added to a loop queue. You can see the amount of simulations in your queue next to the "Add" button. You can also adjust how often you want that exact configuration to be added to the queue.
-3. Click on "Start Loop" and all your simulations with your specified configurations will run. You can now leave the program to do the simulations. This is helpful, if you suspect your simulations might take a long time.
+3. Click on "Start Loop" and all your simulations with your specified configurations will run. You can now leave the program to do the simulations. This is helpful if you suspect your simulations might take a long time.
 
 <img src="resources/IMAGES/GUI_screenshot.png"  width="45%" height="20%">
 
 During the simulation, a second GUI will display different kinds of information.\
-At the top you will see general information. Next to the 'vehicles' counter, you will see the amount of vehicles that are AVs and the 'eHMI' counter describes the amount of AVs with eHMI within the AV counter. \
-The numbers in the tables are generally refering to crossing events where a pedestrian had to choose whether or not
-to cross at an unprioritized crossing while ignoring an AVs priority. The 'Ratio' column in the first table is the
+At the top, you will see general information. Next to the 'vehicles' counter, you will see the amount of vehicles that are AVs, and the 'eHMI' counter describes the amount of AVs with eHMI within the AV counter. \
+The numbers in the tables generally refer to crossing events where a pedestrian had to choose whether or not
+to cross at an unprioritized crossing while ignoring an AV's priority. The 'Ratio' column in the first table is the
 ratio of events where someone with a certain attribute ignored an AV to cross the street compared to the total
-amounts of crossing event of the group with that attribute (amount of 'Crossed' divided by total amount).\
+number of crossing events of the group with that attribute (amount of 'Crossed' divided by total amount).\
 The 'crossingID' table describes the amount of crossing events at a specific crossing.
 
 You can pause ('Pause' button) or completely stop and end ('Stop' button) the simulation at any time.
@@ -190,8 +190,8 @@ Note: --density starts at 0.0 by default, thus, the first scenarios will not lea
 
 
 ### Configurations
-In the `config.py` file you can view and change a lot of different factors. The following block is a list of the same variables that you can also change in the configuration GUI with a description and range (the same description shown in the config GUI): \
-( Some of these values are defiance values (DFV). A DFV is used to calculate a likelihood of a pedestrian to not respect AV priority
+In the `config.py` file, you can view and change a lot of different factors. The following block is a list of the same variables that you can also change in the configuration GUI with a description and range (the same description shown in the config GUI): \
+( Some of these values are defiance values (DFV). A DFV is used to calculate the likelihood of a pedestrian to not respect AV priority
 in traffic. A higher DFV contributes to a higher likelihood for a pedestrian to ignore AV priority.)
 
 `av_density` = automated vehicle (AV) density (0.0 <= x <= 1.0) \
@@ -290,26 +290,26 @@ several result files:
 - [link.xml](https://sumo.dlr.de/docs/Simulation/Output/index.html) (under 'Additional Debugging Outputs')
 - [personinfo.xml](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.html) (under 'Further Options')
 
-All of the generated xml output files (by SUMO) can be deactivated in `config.py`.
+All of the generated XML output files (by SUMO) can be deactivated in `config.py`.
 
 Important: With an increasing number of activated output files, the performance decreases.
 
-Also, be aware, if the simulation does not end properly (for example, if you interrupt the program in an unintended way), some of these listed result files may
+Also, be aware if the simulation does not end properly (for example, if you interrupt the program in an unintended way), some of these listed result files may
 not actually contain any data.
 
-Use the `xml2csvSWA.py` script in 'SumoWithAVs' to quickly convert all xml files within a results folder to csv. This
+Use the `xml2csvSWA.py` script in 'SumoWithAVs' to quickly convert all XML files within a results folder to CSV. This
 utilizes Python and the SUMO script `xml2csv.py` by SUMO in the terminal. When 
-executing the script, it will prompt you to give a name of a folder located in the 'simulation-results' directory.
+executing the script, it will prompt you to give the name of a folder located in the 'simulation-results' directory.
 (Example: 20230425-062946-Small_Test_Network)
 
 Before using it, adjust the `pythonPath` variable accordingly (read comment) and `xml2csvPath` too (also read comment).
-You have several options before executing the script: Add files to exclude_files to exclude them from converting to csv.
-If `delete_after_convert` is set to True, files that are converted to csv will have their original xml version deleted.
-`zip_folder_after_convert` will make a zip archive out of the new folder and `delete_original_folder_after_zip` 
+You have several options before executing the script: Add files to exclude_files to exclude them from converting to CSV.
+If `delete_after_convert` is set to True, files that are converted to CSV will have their original XML version deleted.
+`zip_folder_after_convert` will make a zip archive out of the new folder, and `delete_original_folder_after_zip` 
 deletes the original folder but only if `zip_folder_after_convert` is set to True. The script generally tries to adjust 
-its `xml2csv.py` path to your operating system but you might want to check if the path is correct for your use.
+its `xml2csv.py` path to your operating system, but you might want to check if the path is correct for your use.
 
-Note: The conversion to csv happens automatically after each simulation if the `convert_to_csv_after_sim` in the `config.py` is set to `True` and it prints an error message to the console if you did not adjust the paths in `xml2csvSWA.py`. If you use the GUI, you can check a box (or uncheck it) if you want this automatic conversion after the simulation.
+Note: The conversion to CSV happens automatically after each simulation if the `convert_to_csv_after_sim` in the `config.py` is set to `True`, and it prints an error message to the console if you did not adjust the paths in `xml2csvSWA.py`. If you use the GUI, you can check a box (or uncheck it) if you want this automatic conversion after the simulation.
 
 Also note: If the simulation ended with an error (you closed it in an unintended way, computer crash, etc.) 
 using `xml2csv.py` will most likely not work properly and will throw many errors.
@@ -326,13 +326,40 @@ Example:
 Be aware that certain scenarios might not be suitable for this program. They might not be compatible with the code or
 may not bring meaningful results if they lack sidewalks or unprioritized crossings or have broken structures.
 
-Use OSMWebWizard, if there is need for a new map to simulate.
+Use OSMWebWizard, if there is a need for a new map to simulate.
 https://sumo.dlr.de/docs/Tutorials/OSMWebWizard.html \
 Be aware that OSMWebWizard can create scenarios that are highly inefficient or may not function in an intended way.
 
+## PedSUMO Maintenance Plan
+
+### Objective
+To ensure the continuous functionality, relevance, and improvement of PedSUMO in the dynamic field of automated vehicle-pedestrian interaction simulation.
+
+### Version Compatibility and Adaptation
+- **Regular SUMO Version Monitoring**: Actively monitor new releases and updates of SUMO.
+- **Timely Adaptations**: Update PedSUMO following a new SUMO release to ensure compatibility.
+- **Backward Compatibility**: Maintain backward compatibility with at least the last major SUMO version.
+
+### Community Contributions and Collaborations
+- **Open Contributions**: We highly encourage contributions from the community, including bug fixes, feature enhancements, and documentation improvements.
+- **Review Process for Contributions**: All contributions will be reviewed by our core development team to ensure consistency and quality.
+
+### Documentation and Support
+- **Comprehensive Documentation**: Maintain and update the documentation, including installation guides, usage tutorials, and FAQs.
+- **Community Support Channels**: Establish channels (e.g., GitHub Issues) for community support and feedback.
+
+### Long-Term Sustainability
+- **Collaborations with Academic and Industry Partners**: Aim to collaborate with other researchers and industry partners to ensure the long-term sustainability and relevance of PedSUMO.
+- **Grant and Funding Pursuits**: Seek grants and funding to support the ongoing development and maintenance of PedSUMO.
+
+### Commitment
+Our team is committed to the long-term success and usability of PedSUMO, ensuring it remains a valuable tool for researchers and practitioners in the field.
+
+
+
 ## Quick Advice
 
-### "The simulation runs but there are no pedestrians/vehicles that cause any events."
+### "The simulation runs, but there are no pedestrians/vehicles that cause any events."
 Try using `randomTrips.py` (https://sumo.dlr.de/docs/Tools/Trip.html). The most common commands will be:
 ```console
 python [path to randomTrips.py] -n [path to scenario `.net` file] --pedestrian --validate -o ped.trips.xml
@@ -363,7 +390,7 @@ This behavior might be due to Windows' QuickEdit Mode or Insert Mode, which are 
 
 When QuickEdit Mode or Insert Mode is enabled, clicking within the command prompt window will select text for copying. This action also pauses the execution of any running program in the window until you press a key.
 
-If you didn't intentionally click in the window, it's possible that you accidentally clicked there when the window was in the foreground. If you have a mouse with a sensitive click detection or a touchpad that you might have touched inadvertently, this could have happened without your knowledge.
+If you didn't intentionally click in the window, it's possible that you accidentally clicked there when the window was in the foreground. If you have a mouse with sensitive click detection or a touchpad that you might have touched inadvertently, this could have happened without your knowledge.
 
 Here's how to disable these modes:
 
@@ -374,9 +401,11 @@ Open a command prompt.
     - "Insert Mode"
 3. Click "OK".
 
-Remember to be careful, because disabling these modes will make it more difficult to copy and paste in the command prompt window. If you often use these features, you might want to leave them enabled and just be cautious about clicking within the window while your script is running.
+Remember to be careful because disabling these modes will make it more difficult to copy and paste in the command prompt window. If you often use these features, you might want to leave them enabled and just be cautious about clicking within the window while your script runs.
+
 
 ## Licenses
 - [SUMO](https://sumo.dlr.de/docs/Libraries_Licenses.html)
 - [Matplotlib](https://matplotlib.org/stable/users/project/license.html)
 - [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt)
+
