@@ -1,7 +1,12 @@
-# PedSUMO - Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
-
 
 <img src="resources/IMAGES/High-Level-PedSUMO-crop.png"  width="100%" height="100%" align="right">
+
+
+
+
+
+# PedSUMO - Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
+
 
 
 ## Introduction
