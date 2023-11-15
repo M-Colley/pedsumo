@@ -1,5 +1,9 @@
 # PedSUMO - Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/)
 
+
+<img src="resources/IMAGES/High-Level-PedSUMO-crop.png"  width="80%" height="80%" align="right">
+
+
 ## Introduction
 
 ### Project SumoWithAVs (or 'Investigating Macroscopic Effects of Automated Vehicles on Traffic')
