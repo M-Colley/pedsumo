@@ -1,5 +1,5 @@
 
-<img src="resources/IMAGES/High-Level-PedSUMO-crop.png"  width="100%" height="100%" align="right">
+<img src="resources/IMAGES/High-Level-PedSUMO-crop-hoizontal.png"  width="100%" height="100%" align="right">
 
 
 
