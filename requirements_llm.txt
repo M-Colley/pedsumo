@@ -1,6 +1,6 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
 
-torch>=2.1.0
+torch>=2.1.1
 transformers>=4.35.2
 torchvision
 torchaudio
