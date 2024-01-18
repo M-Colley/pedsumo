@@ -12,6 +12,15 @@
 [Mark Colley](https://scholar.google.de/citations?user=Kt5I7wYAAAAJ&hl=de&oi=ao), Julian Czymmeck, Mustafa Kücükkocak, [Pascal Jansen](https://scholar.google.de/citations?user=cR1_0-EAAAAJ&hl=en), [Enrico Rukzio](https://scholar.google.de/citations?user=LEu4D5gAAAAJ&hl=de&oi=ao)
 
 
+## Downloading the `resources` Directory
+Due to limitations with GIT LFS, specifically the quota per project (1GB per month), we have provided an alternative method to download the `resources` directory.
+Please use the following Google Drive link to download the `resources` directory:
+[Download Resources](https://drive.google.com/file/d/1QdxX8_j1YggWxMeIVQcxMbVKmSrN1a92/view?usp=drive_link)
+
+After downloading, replace the existing `resources` folder in your project with the downloaded folder.
+
+
+
 ## Introduction
 
 ### Project SumoWithAVs (or 'Investigating Macroscopic Effects of Automated Vehicles on Traffic')
