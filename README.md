@@ -6,7 +6,7 @@
 
 
 # PedSUMO - Pedestrian Crossings in [SUMO](https://www.eclipse.org/sumo/) 
-(cond. accepted to [HRI '24](https://humanrobotinteraction.org/2024/), doi: 10.1145/3610977.3637478)
+Short Paper at [HRI '24](https://humanrobotinteraction.org/2024/), doi: [10.1145/3610977.3637478](https://dl.acm.org/doi/10.1145/3610977.3637478)
 
 
 [Mark Colley](https://scholar.google.de/citations?user=Kt5I7wYAAAAJ&hl=de&oi=ao), Julian Czymmeck, Mustafa Kücükkocak, [Pascal Jansen](https://scholar.google.de/citations?user=cR1_0-EAAAAJ&hl=en), [Enrico Rukzio](https://scholar.google.de/citations?user=LEu4D5gAAAAJ&hl=de&oi=ao)
