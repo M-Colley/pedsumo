@@ -1198,7 +1198,7 @@ def init_sim():
 
 def prepare_sim():
     if cf.guiOn and not options.nogui:
-	import gui
+        import gui
         start_cgui()
     else:
         init_sim()
