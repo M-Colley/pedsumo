@@ -10,7 +10,6 @@ import time
 import csv
 from enum import IntEnum
 import config as cf
-import gui
 import xml2csvSWA
 # only import if available
 import importlib.util
@@ -1199,6 +1198,7 @@ def init_sim():
 
 def prepare_sim():
     if cf.guiOn and not options.nogui:
+	import gui
         start_cgui()
     else:
         init_sim()
