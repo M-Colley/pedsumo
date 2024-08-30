@@ -1,5 +1,5 @@
 using DataFrames, CSV, DataFramesMeta, MixedModels, Glob, CategoricalArrays, RegressionTables, FilePathsBase
-using Weave, Plots, Missings, Statistics, GLM, LinearAlgebra, LaTeXStrings, TidierPlots, Images, GLM
+using Weave, Plots, Missings, Statistics, GLM, LinearAlgebra, LaTeXStrings, TidierPlots, Images
 
 #Pkg.add("Weave")
 #scenario_name = "Ingolstadt" # for test
