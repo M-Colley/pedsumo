@@ -40,11 +40,11 @@ after each simulation using different variables (such as density of AVs in traff
 We always tried to make factors (probabilities, numbers, values, calculations, etc.) impacting traffic as reasonable and factual as possible. For that, we either used scientific resources or made educated guesses.
 
 ### Frameworks and Libraries
-- [SUMO](https://www.eclipse.org/sumo/) (version 1.17.0, 1.18.0, and 1.19.0) 
+- [SUMO](https://www.eclipse.org/sumo/) (version 1.21.0 and up) 
     1. traci (python package)
     2. sumolib (python package)
-- [Python 3](https://www.python.org/about/) (tested with version 3.11 and 3.12)
-- [PySimpleGUI](https://www.pysimplegui.org/en/latest/) (for two GUIs)
+- [Python 3](https://www.python.org/about/) (tested with version 3.11, 3.12, and 3.13)
+- [PySimpleGUI](https://www.pysimplegui.org/en/latest/) (for two GUIs; we remain with version 4 due to licensing)
 - [Matplotlib](https://matplotlib.org) (for visualization of data during simulation)
 - [Transformers](https://huggingface.co/docs/transformers/installation)
 - XML, CSV (file formats) \
@@ -79,7 +79,8 @@ First, you need all resources to run the program. Follow these 4 steps:
 
 1. Install a version of Python 3 - we use 3.11: https://www.python.org/downloads/
 2. Install SUMO (go to the section for your operating system): https://sumo.dlr.de/docs/Downloads.php
-3. Clone this project into a folder. First, go into a folder of your choice using the command on your terminal:
+3. Set `SUMO_HOME` (e.g., `C:\Program Files (x86)\Eclipse\Sumo\bin` on Windows)
+4. Clone this project into a folder. First, go into a folder of your choice using the command on your terminal:
 ```console
 cd [path to folder of your choice]
 ```
