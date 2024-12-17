@@ -86,11 +86,11 @@ cd [path to folder of your choice]
 ```
 Then, clone this repository using
 ```console
-git clone git@gitlab-mi.informatik.uni-ulm.de:ehmi/sumo-se-2022.git
+git clone git@github.com:M-Colley/pedsumo.git
 ```
 or
 ```console
-git clone https://gitlab-mi.informatik.uni-ulm.de/ehmi/sumo-se-2022.git
+git clone https://github.com/M-Colley/pedsumo.git
 ```
 4. Install PySimpleGUI and Matplotlib. You can just execute 
 ```console
