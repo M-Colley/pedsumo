@@ -1,5 +1,6 @@
 PySimpleGUI<5 # starting with version 5, it is a paid service (though with free version for hobbyists)
-matplotlib>=3.9.3
+matplotlib>=3.10.0
 pandas>=2.2.3
 numpy>=1.26.4
+sumolib>=1.22.0
 screeninfo
