@@ -41,9 +41,9 @@ setup(
     'Intended Audience :: Developers',      # Define that your audience is developers
     'Topic :: Software Development :: Build Tools',
     'License :: OSI Approved :: MIT License',   # Again, pick a license
-    'Programming Language :: Python :: 3',      #Specify which python versions that you want to support
-    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3',      #Specify which Python versions that you want to support
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
   ],
 )
