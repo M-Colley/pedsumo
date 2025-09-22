@@ -3,4 +3,5 @@ pandas>=2.2.3
 numpy>=1.26.4
 sumolib>=1.24.0
 screeninfo
+PySide6>=6.7.3
 
