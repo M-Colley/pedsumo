@@ -46,7 +46,7 @@ We always tried to make factors (probabilities, numbers, values, calculations, e
     1. traci (python package)
     2. sumolib (python package)
 - [Python 3](https://www.python.org/about/) (tested with version 3.11, 3.12, and 3.13)
-- [PySimpleGUI](https://www.pysimplegui.org/en/latest/) (for two GUIs; we remain with version 4 due to licensing)
+- [PySide6](https://doc.qt.io/qtforpython/) (Qt-based GUIs for configuration and simulation dashboards)
 - [Matplotlib](https://matplotlib.org) (for visualization of data during simulation)
 - [Transformers](https://huggingface.co/docs/transformers/installation)
 - XML, CSV (file formats) \
@@ -94,7 +94,7 @@ or
 ```console
 git clone https://github.com/M-Colley/pedsumo.git
 ```
-4. Install PySimpleGUI and Matplotlib. You can just execute 
+4. Install PySide6 and Matplotlib. You can just execute
 ```console
 pip install -r [path to requirements.txt of this project]
 ```
@@ -431,5 +431,5 @@ Remember to be careful because disabling these modes will make it more difficult
 ## Licenses
 - [SUMO](https://sumo.dlr.de/docs/Libraries_Licenses.html)
 - [Matplotlib](https://matplotlib.org/stable/users/project/license.html)
-- [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt)
+- [PySide6](https://doc.qt.io/qtforpython/licenses.html)
 

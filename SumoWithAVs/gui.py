@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 import config as cf
-import PySimpleGUI
 import matplotlib.pyplot as plt
 import sys
+import time
+from typing import Dict
+
+from PySide6 import QtCore, QtGui, QtWidgets
 from screeninfo import get_monitors
 
 #############################################
@@ -86,13 +89,511 @@ total_pedestrians = 0
 total_av = 0
 total_ehmi = 0
 
-PySimpleGUI.set_options(font=("Arial Bold", 14))
-
 visualized_file = ""
 
 num_of_loops: int = 0
 loop_data: list = [] # saves configuration of each run in a loop
 in_loop: bool = False # True if in a simulation loop with several simulations
+
+app: QtWidgets.QApplication | None = None
+
+
+def _get_app() -> QtWidgets.QApplication:
+    """Return a QApplication instance, creating one if necessary."""
+
+    global app
+    existing = QtWidgets.QApplication.instance()
+    if existing is not None and app is None:
+        app = existing
+
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+        app.setStyle("Fusion")
+
+        palette = QtGui.QPalette()
+        palette.setColor(QtGui.QPalette.Window, QtGui.QColor(245, 247, 251))
+        palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(31, 41, 51))
+        palette.setColor(QtGui.QPalette.Base, QtGui.QColor(255, 255, 255))
+        palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(241, 245, 249))
+        palette.setColor(QtGui.QPalette.Text, QtGui.QColor(31, 41, 55))
+        palette.setColor(QtGui.QPalette.Button, QtGui.QColor(37, 99, 235))
+        palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(255, 255, 255))
+        palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(37, 99, 235))
+        palette.setColor(QtGui.QPalette.HighlightedText, QtGui.QColor(255, 255, 255))
+        app.setPalette(palette)
+
+        font = QtGui.QFont("Segoe UI", 10)
+        app.setFont(font)
+
+    return app
+
+
+def _configure_table(table: QtWidgets.QTableWidget, headers: list[str]) -> None:
+    table.setColumnCount(len(headers))
+    table.setHorizontalHeaderLabels(headers)
+    table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+    table.verticalHeader().setVisible(False)
+    table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+    table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+    table.setAlternatingRowColors(True)
+    table.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+
+
+def _fill_table(table: QtWidgets.QTableWidget, data: list[list]) -> None:
+    table.setRowCount(len(data))
+    for row, row_data in enumerate(data):
+        for column, value in enumerate(row_data):
+            item = QtWidgets.QTableWidgetItem(str(value))
+            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            table.setItem(row, column, item)
+
+
+class SimulationWindow(QtWidgets.QMainWindow):
+    """Main window shown during a running simulation."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("Simulating")
+        self.resize(GUI_size_x, GUI_size_y)
+        self.setMinimumSize(720, 640)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+
+        self.paused = False
+        self.stop_requested = False
+        self.quit_requested = False
+        self.was_closed = False
+
+        self.setStyleSheet(
+            """
+            QWidget {
+                background-color: #f5f7fb;
+                color: #1f2937;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+                font-size: 12pt;
+            }
+            QGroupBox {
+                border: 1px solid #d0d7de;
+                border-radius: 10px;
+                margin-top: 12px;
+                padding: 16px;
+                background-color: #ffffff;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 18px;
+                padding: 0 4px;
+                color: #0f172a;
+                font-weight: bold;
+            }
+            QPushButton {
+                background-color: #2563eb;
+                color: #ffffff;
+                border-radius: 6px;
+                padding: 10px 18px;
+                font-weight: 600;
+            }
+            QPushButton#pauseButton {
+                background-color: #f59e0b;
+                color: #1f2937;
+            }
+            QPushButton#stopButton {
+                background-color: #10b981;
+            }
+            QPushButton#quitButton {
+                background-color: #ef4444;
+            }
+            QPushButton:hover {
+                background-color: #1d4ed8;
+            }
+            QTableWidget {
+                background-color: #ffffff;
+                border: none;
+                alternate-background-color: #f1f5f9;
+                gridline-color: #d0d7de;
+            }
+            QHeaderView::section {
+                background-color: #1d4ed8;
+                color: #ffffff;
+                padding: 6px;
+                border: none;
+                font-weight: 600;
+            }
+            """
+        )
+
+        central = QtWidgets.QWidget()
+        self.setCentralWidget(central)
+        main_layout = QtWidgets.QVBoxLayout(central)
+        main_layout.setSpacing(18)
+        main_layout.setContentsMargins(24, 24, 24, 24)
+
+        self.time_label = QtWidgets.QLabel()
+        self.time_label.setStyleSheet("font-size: 18px; font-weight: 600;")
+        self.ped_label = QtWidgets.QLabel()
+        self.ped_label.setStyleSheet("font-size: 16px;")
+        self.vehicle_label = QtWidgets.QLabel()
+        self.vehicle_label.setStyleSheet("font-size: 16px;")
+
+        status_group = QtWidgets.QGroupBox("Simulation Status")
+        status_layout = QtWidgets.QVBoxLayout(status_group)
+        status_layout.setSpacing(6)
+        status_layout.addWidget(self.time_label)
+        status_layout.addWidget(self.ped_label)
+        status_layout.addWidget(self.vehicle_label)
+        main_layout.addWidget(status_group)
+
+        self.crossing_data_table = QtWidgets.QTableWidget()
+        _configure_table(
+            self.crossing_data_table,
+            ["Category", "Crossed", "Not Crossed", "Ratio (Crossed)"],
+        )
+
+        crossing_data_group = QtWidgets.QGroupBox("Crossing Overview")
+        data_layout = QtWidgets.QVBoxLayout(crossing_data_group)
+        data_layout.addWidget(self.crossing_data_table)
+        main_layout.addWidget(crossing_data_group)
+
+        self.ages_table = QtWidgets.QTableWidget()
+        _configure_table(self.ages_table, ["Age", "Times crossed", "Times not crossed"])
+
+        ages_group = QtWidgets.QGroupBox("Age Distribution")
+        ages_layout = QtWidgets.QVBoxLayout(ages_group)
+        ages_layout.addWidget(self.ages_table)
+        main_layout.addWidget(ages_group)
+
+        self.crossing_table = QtWidgets.QTableWidget()
+        _configure_table(self.crossing_table, ["CrossingID", "Event Count"])
+
+        crossings_group = QtWidgets.QGroupBox("Crossing Events by Location")
+        crossings_layout = QtWidgets.QVBoxLayout(crossings_group)
+        crossings_layout.addWidget(self.crossing_table)
+        main_layout.addWidget(crossings_group)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addStretch()
+
+        self.pause_button = QtWidgets.QPushButton("Pause")
+        self.pause_button.setObjectName("pauseButton")
+        self.pause_button.clicked.connect(self.toggle_pause)
+        button_layout.addWidget(self.pause_button)
+
+        self.stop_button = QtWidgets.QPushButton("Stop")
+        self.stop_button.setObjectName("stopButton")
+        self.stop_button.clicked.connect(self.request_stop)
+        button_layout.addWidget(self.stop_button)
+
+        self.quit_button = QtWidgets.QPushButton("Quit Application")
+        self.quit_button.setObjectName("quitButton")
+        self.quit_button.clicked.connect(self.request_quit)
+        button_layout.addWidget(self.quit_button)
+
+        button_layout.addStretch()
+        main_layout.addLayout(button_layout)
+
+    def update_time_step(self, timestep: int, delay: int) -> None:
+        self.time_label.setText(
+            f"Timestep: {timestep} (Update delay: {delay} steps)"
+        )
+
+    def update_counts(
+        self, total_pedestrians: int, total_vehicles: int, total_av: int, total_ehmi: int
+    ) -> None:
+        self.ped_label.setText(f"Pedestrians: {total_pedestrians}")
+        self.vehicle_label.setText(
+            f"Vehicles: {total_vehicles}  (of which AVs: {total_av}/AVs with eHMI: {total_ehmi})"
+        )
+
+    def update_crossing_data(self, data: list[list]) -> None:
+        _fill_table(self.crossing_data_table, data)
+
+    def update_age_distribution(self, data: list[list]) -> None:
+        _fill_table(self.ages_table, data)
+
+    def update_crossing_events(self, data: list[list]) -> None:
+        _fill_table(self.crossing_table, data)
+
+    def toggle_pause(self) -> None:
+        self.paused = not self.paused
+        self.pause_button.setText("Continue" if self.paused else "Pause")
+
+    def request_stop(self) -> None:
+        self.stop_requested = True
+
+    def request_quit(self) -> None:
+        self.quit_requested = True
+        self.close()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # type: ignore[override]
+        self.was_closed = True
+        super().closeEvent(event)
+
+
+class ConfigWindow(QtWidgets.QMainWindow):
+    """Configuration window shown before running a simulation."""
+
+    def __init__(self, loop_count: int, recent_message: str, error_prefix: str) -> None:
+        super().__init__()
+        self.setWindowTitle('Configurations' + recent_message)
+        self.resize(cGUI_size_x, cGUI_size_y)
+        self.setMinimumSize(720, 640)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+
+        self.start_clicked = False
+        self.add_loop_clicked = False
+        self.quit_requested = False
+        self.was_closed = False
+
+        self.adjustable_inputs: Dict[str, QtWidgets.QLineEdit] = {}
+
+        self.setStyleSheet(
+            """
+            QWidget {
+                background-color: #f7f8fc;
+                color: #1f2937;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+                font-size: 11pt;
+            }
+            QGroupBox {
+                border: 1px solid #d0d7de;
+                border-radius: 10px;
+                margin-top: 14px;
+                padding: 16px;
+                background-color: #ffffff;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 18px;
+                padding: 0 4px;
+                color: #0f172a;
+                font-weight: bold;
+            }
+            QPushButton {
+                background-color: #2563eb;
+                color: #ffffff;
+                border-radius: 6px;
+                padding: 10px 18px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #1d4ed8;
+            }
+            QPushButton#addLoopButton {
+                background-color: #10b981;
+            }
+            QPushButton#quitButton {
+                background-color: #ef4444;
+            }
+            QListWidget {
+                background-color: #ffffff;
+                border: 1px solid #d0d7de;
+                border-radius: 6px;
+            }
+            QScrollArea {
+                border: none;
+            }
+            QLineEdit {
+                padding: 6px 8px;
+                border: 1px solid #d0d7de;
+                border-radius: 6px;
+                background-color: #ffffff;
+            }
+            QCheckBox {
+                padding: 4px 0;
+            }
+            """
+        )
+
+        central = QtWidgets.QWidget()
+        self.setCentralWidget(central)
+        main_layout = QtWidgets.QVBoxLayout(central)
+        main_layout.setSpacing(18)
+        main_layout.setContentsMargins(24, 24, 24, 24)
+
+        header = QtWidgets.QLabel("Simulation Configuration")
+        header.setStyleSheet("font-size: 22px; font-weight: 700;")
+        main_layout.addWidget(header)
+
+        scenario_group = QtWidgets.QGroupBox("Scenarios")
+        scenario_layout = QtWidgets.QVBoxLayout(scenario_group)
+        scenario_layout.setSpacing(12)
+        self.scenario_list = QtWidgets.QListWidget()
+        self.scenario_list.setAlternatingRowColors(True)
+        self.scenario_list.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        for scenario in cf.scenarios:
+            self.scenario_list.addItem(scenario[0])
+        if self.scenario_list.count() > 0:
+            self.scenario_list.setCurrentRow(0)
+        scenario_layout.addWidget(self.scenario_list)
+        main_layout.addWidget(scenario_group)
+
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addStretch()
+        self.start_button = QtWidgets.QPushButton("Start Simulation")
+        self.start_button.clicked.connect(self._handle_start)
+        buttons_layout.addWidget(self.start_button)
+
+        self.quit_button = QtWidgets.QPushButton("Quit Application")
+        self.quit_button.setObjectName("quitButton")
+        self.quit_button.clicked.connect(self._handle_quit)
+        buttons_layout.addWidget(self.quit_button)
+        buttons_layout.addStretch()
+        main_layout.addLayout(buttons_layout)
+
+        options_group = QtWidgets.QGroupBox("Run Options")
+        options_layout = QtWidgets.QHBoxLayout(options_group)
+        options_layout.setSpacing(12)
+        self.visualization_checkbox = QtWidgets.QCheckBox("Data Visualization during Simulation")
+        self.visualization_checkbox.setChecked(cf.visualization_shown)
+        self.sumo_gui_checkbox = QtWidgets.QCheckBox("SUMO's GUI")
+        self.sumo_gui_checkbox.setChecked(cf.sumo_GuiOn)
+        self.convert_checkbox = QtWidgets.QCheckBox("Convert xml to csv after simulation")
+        self.convert_checkbox.setChecked(cf.convert_to_csv_after_sim)
+        options_layout.addWidget(self.visualization_checkbox)
+        options_layout.addWidget(self.sumo_gui_checkbox)
+        options_layout.addWidget(self.convert_checkbox)
+        options_layout.addStretch()
+        main_layout.addWidget(options_group)
+
+        loop_group = QtWidgets.QGroupBox("Simulation Loop")
+        loop_layout = QtWidgets.QVBoxLayout(loop_group)
+        loop_controls = QtWidgets.QHBoxLayout()
+        self.add_loop_button = QtWidgets.QPushButton("Add Configuration to Loop")
+        self.add_loop_button.setObjectName("addLoopButton")
+        self.add_loop_button.clicked.connect(self._handle_add_loop)
+        loop_controls.addWidget(self.add_loop_button)
+        loop_controls.addStretch()
+        self.loop_count_label = QtWidgets.QLabel()
+        loop_controls.addWidget(self.loop_count_label)
+        loop_layout.addLayout(loop_controls)
+
+        loop_form = QtWidgets.QFormLayout()
+        loop_form.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.loop_input = QtWidgets.QLineEdit("1")
+        self.loop_input.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.loop_input.setMaximumWidth(120)
+        loop_form.addRow("How many runs of this configuration?", self.loop_input)
+        loop_layout.addLayout(loop_form)
+        main_layout.addWidget(loop_group)
+
+        timing_group = QtWidgets.QGroupBox("Timing")
+        timing_layout = QtWidgets.QFormLayout(timing_group)
+        timing_layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.update_delay_input = QtWidgets.QLineEdit(str(cf.update_delay))
+        self.update_delay_input.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.update_delay_input.setMaximumWidth(160)
+        timing_layout.addRow("Gui update delay (increase for better performance)", self.update_delay_input)
+
+        self.last_step_input = QtWidgets.QLineEdit("3600")
+        self.last_step_input.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.last_step_input.setMaximumWidth(160)
+        timing_layout.addRow("Timestep number up to which the simulation should run.\nScenario may not support higher last step.", self.last_step_input)
+        main_layout.addWidget(timing_group)
+
+        self.error_label = QtWidgets.QLabel()
+        self.error_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+        main_layout.addWidget(self.error_label)
+
+        adjust_group = QtWidgets.QGroupBox("Adjustable Configuration Values")
+        adjust_layout = QtWidgets.QVBoxLayout(adjust_group)
+        adjust_layout.setContentsMargins(0, 0, 0, 0)
+        adjust_layout.setSpacing(0)
+        self.adjust_scroll = QtWidgets.QScrollArea()
+        self.adjust_scroll.setWidgetResizable(True)
+        adjust_layout.addWidget(self.adjust_scroll)
+        main_layout.addWidget(adjust_group)
+
+        adjust_container = QtWidgets.QWidget()
+        self.adjust_scroll.setWidget(adjust_container)
+        self.adjust_layout = QtWidgets.QVBoxLayout(adjust_container)
+        self.adjust_layout.setSpacing(12)
+        self.adjust_layout.setContentsMargins(16, 16, 16, 16)
+        self._build_adjustable_fields()
+
+        self.update_loop_info(loop_count)
+        self.set_error_message(error_prefix)
+
+    def _build_adjustable_fields(self) -> None:
+        section_headers = {
+            "av_density": "Base",
+            "group_size_dfv_two_to_three": "Group Size",
+            "ttc_lower_extreme_time": "Time To Collision",
+            "waiting_time_accepted_value": "Waiting Time",
+            "small_vehicle_size": "Vehicle Size",
+            "lane_low_occupancy_rate": "Occupancy",
+            "child_age": "Children",
+            "smombie_dfv": "Smombies",
+            "male_gender_dfv": "Gender",
+            "impaired_vision_dfv": "Disability",
+            "walking_pedestrian_dfv": "Other",
+        }
+
+        for key in adjustable_config_values:
+            if key in section_headers:
+                header = QtWidgets.QLabel(section_headers[key])
+                header.setStyleSheet("font-size: 16px; font-weight: 700; color: #1d4ed8; margin-top: 12px;")
+                self.adjust_layout.addWidget(header)
+
+            row_widget = QtWidgets.QWidget()
+            row_layout = QtWidgets.QHBoxLayout(row_widget)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(12)
+
+            label = QtWidgets.QLabel(adjust_config_value(key, 'text', 0))
+            label.setWordWrap(True)
+            row_layout.addWidget(label, 3)
+
+            line_edit = QtWidgets.QLineEdit(str(adjust_config_value(key, 'get', 0)))
+            line_edit.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+            line_edit.setMaximumWidth(160)
+            self.adjustable_inputs[key] = line_edit
+            row_layout.addWidget(line_edit, 1)
+
+            self.adjust_layout.addWidget(row_widget)
+
+        self.adjust_layout.addStretch()
+
+    def update_loop_info(self, loop_count: int) -> None:
+        self.loop_count_label.setText(f"Currently added: {loop_count}")
+        self.start_button.setText("Start Loop" if loop_count else "Start Simulation")
+
+    def set_error_message(self, prefix: str) -> None:
+        if prefix:
+            message = f"{prefix}Adjust config values. Must be numbers."
+        else:
+            message = "Adjust config values. Must be numbers."
+        self.error_label.setText(message)
+
+    def get_form_values(self) -> Dict[str, object]:
+        selected_index = self.scenario_list.currentRow()
+        if selected_index < 0:
+            selected_index = None
+
+        adjustable_values = {key: field.text().strip() for key, field in self.adjustable_inputs.items()}
+
+        return {
+            'selected_scenario': selected_index,
+            'update_delay': self.update_delay_input.text().strip(),
+            'last_timestep': self.last_step_input.text().strip(),
+            'loop_count': self.loop_input.text().strip(),
+            'visualization': self.visualization_checkbox.isChecked(),
+            'sumo_gui': self.sumo_gui_checkbox.isChecked(),
+            'convert_xml': self.convert_checkbox.isChecked(),
+            'adjustable': adjustable_values,
+        }
+
+    def _handle_start(self) -> None:
+        self.start_clicked = True
+
+    def _handle_add_loop(self) -> None:
+        self.add_loop_clicked = True
+
+    def _handle_quit(self) -> None:
+        self.quit_requested = True
+        self.close()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # type: ignore[override]
+        self.was_closed = True
+        super().closeEvent(event)
 
 def gndr_check(gndr: str, crossed: bool) -> None:
     """
@@ -291,270 +792,100 @@ def __create_crossing_data_array() -> list:
             ["Impaired Vision", impaired_vision_crossed, impaired_vision_ncrossed, div(impaired_vision_crossed, impaired_vision_ncrossed + impaired_vision_crossed)]]
 
 
-def __create_gui() -> PySimpleGUI.Window:
-    """
-    Creates GUI to run during the simulation. Do not call this function outside of this file.
-    """
+def __create_gui() -> SimulationWindow:
+    """Create and return the simulation window."""
 
-    global women_crossed
-    global women_ncrossed
-    global men_crossed
-    global men_ncrossed
-    global other_crossed
-    global other_ncrossed
-    global healthy_vision_crossed
-    global healthy_vision_ncrossed
-    global impaired_vision_ncrossed
-    global impaired_vision_crossed
+    _get_app()
 
     reset_numbers()
 
-    timeStep = PySimpleGUI.Text("Timestep: " + str(current_traci_step) + " (Update delay: " + str(cf.update_delay) + " steps)", key='-timestep-')
-
-    total_pedestrians_t = PySimpleGUI.Text("Pedestrians: " + str(total_pedestrians), key='-tp-')
-    total_vehicles_t = PySimpleGUI.Text("Vehicles: " + str(total_vehicles) + "  (of which AVs: " + str(total_av) + "/AVs with eHMI: " + str(total_ehmi) + ")", key='-v-')
-
-    global ages
-    age_table = PySimpleGUI.Table(values=ages, headings=["Age", "Times crossed", "Times not crossed"],
-                                     auto_size_columns=False,
-                                     display_row_numbers=False,
-                                     justification='center', key='-ags-',
-                                     selected_row_colors='red on yellow',
-                                     enable_events=False,
-                                     expand_x=True,
-                                     expand_y=True,
-                                     enable_click_events=False)
-
-    # table that shows data about crossings
-    global crossingIDs
-    crossing_table = PySimpleGUI.Table(values=crossingIDs, headings=["CrossingID", "Event Count"],
-                                     auto_size_columns=False,
-                                     display_row_numbers=False,
-                                     justification='center', key='-cr-',
-                                     selected_row_colors='red on yellow',
-                                     enable_events=False,
-                                     expand_x=True,
-                                     expand_y=True,
-                                     enable_click_events=False)
-
-    # table that shows data about how many individuals crossed/did not cross
-    crossing_data_table = PySimpleGUI.Table(values=__create_crossing_data_array(),
-                                            headings=["Category", "Crossed", "Not Crossed", "Ratio (Crossed)"],
-                                            auto_size_columns=False,
-                                            display_row_numbers=False,
-                                            justification='center', key='-cdt-',
-                                            selected_row_colors='red on yellow',
-                                            enable_events=False,
-                                            expand_x=True,
-                                            expand_y=True,
-                                            enable_click_events=False
-                                            )
-
-    guiPauseButton = PySimpleGUI.Button('Pause', button_color='Orange', key='Pause')
-    guiStopButton = PySimpleGUI.Button('Stop', button_color='Green')
-    guiQuitButton = PySimpleGUI.Button('Quit Application', button_color='Black')
-
-    gui_layout = [[timeStep],
-                  [total_pedestrians_t],
-                  [total_vehicles_t],
-                  [PySimpleGUI.Text()],
-                  [crossing_data_table],
-                  [age_table],
-                  [crossing_table],
-                  [PySimpleGUI.Text()],
-                  [guiPauseButton, guiStopButton, guiQuitButton],
-                  ]
-
-    return PySimpleGUI.Window("Simulating " + current_sim + "|Ends at " + str(cf.run_sim_until_step) +
-                              "|Runs left after this: " + str(num_of_loops), gui_layout, size=(GUI_size_x, GUI_size_y), resizable=True)
+    window = SimulationWindow()
+    window.setWindowTitle(
+        "Simulating "
+        + current_sim
+        + "|Ends at "
+        + str(cf.run_sim_until_step)
+        + "|Runs left after this: "
+        + str(num_of_loops)
+    )
+    window.update_time_step(current_traci_step, cf.update_delay)
+    window.update_counts(total_pedestrians, total_vehicles, total_av, total_ehmi)
+    window.update_crossing_data(__create_crossing_data_array())
+    window.update_age_distribution(ages)
+    window.update_crossing_events(crossingIDs)
+    window.show()
+    return window
 
 
-def __create_cgui() -> PySimpleGUI.Window:
-    """
-    Creates config GUI to run prior to the simulation.
-    """
-
-    choose_scenario_table = list()
-
-    for elem in cf.scenarios:
-        choose_scenario_table.append(elem[0])
-
-    cguiScenTable = PySimpleGUI.Table(values=choose_scenario_table, headings=[""],
-                                      auto_size_columns=True,
-                                      display_row_numbers=False,
-                                      justification='center', key='-selectedscen-',
-                                      selected_row_colors='red on yellow',
-                                      enable_events=True,
-                                      expand_x=True,
-                                      expand_y=True,
-                                      enable_click_events=True,
-                                      num_rows=7)
-
-    cguiTableName = PySimpleGUI.Text("Scenarios:")
-
-    cguiStartButton = PySimpleGUI.Button('Start Simulation', button_color='Green', key='ss')
-    cguiQuitButton = PySimpleGUI.Button('Quit Application', button_color='Black')
-
-    cguiUpdateDelayText = PySimpleGUI.Text('Gui update delay (increase for better performance)          ')
-    cguiUpdateDelayInput = PySimpleGUI.InputText(str(cf.update_delay), key='-ud-', size=(20, 1))
-    cguiUpdateDelayInputColumn = PySimpleGUI.Column([[cguiUpdateDelayInput]], justification='right')
-
-
-    cguiLastTimeStepInput = PySimpleGUI.InputText(key='-lts-', size=(20, 1), default_text="3600")
-    cguiLastTimeStepInputColumn = PySimpleGUI.Column([[cguiLastTimeStepInput]], justification='right')
-    cguiLastTimeStepText = PySimpleGUI.Text('Timestep number up to which the simulation should run.\n' +
-                                          'Scenario may not support higher last step.')
-
-    adjust_values_column = PySimpleGUI.Column(extend_cgui_with_adjustable_values(), scrollable=True, vertical_scroll_only=True, expand_x=True, element_justification="l")
-
-    switch_button = PySimpleGUI.Checkbox("Data Visualization during Simulation", default=cf.visualization_shown, key='sb')
-    sumogui_button = PySimpleGUI.Checkbox("SUMO's GUI", default=cf.sumo_GuiOn,
-                                         key='sgui')
-    convert_xml_button = PySimpleGUI.Checkbox("Convert xml to csv after simulation", default=cf.convert_to_csv_after_sim,
-                                         key='cxml')
-
-    cguiNumberOfLoopsText = PySimpleGUI.Text('How many runs of this configuration?')
-    cguiNumberOfLoopsInput = PySimpleGUI.InputText(default_text=1, key='-loop-', size=(20, 1))
-    cguiNumberOfLoopsInputColumn = PySimpleGUI.Column([[cguiNumberOfLoopsInput]], justification='right')
-    cguiCurrentLoopsNumber = PySimpleGUI.Text('Currently added: ' + str(num_of_loops), key='-num_loops-')
-    cguiAddLoopButton = PySimpleGUI.Button('Add Configuration to Loop')
+def __create_cgui() -> ConfigWindow:
+    """Create and return the configuration window."""
 
     global numeric_error_msg
 
-    cgui_layout = [[cguiTableName],
-                   [cguiScenTable],
-                   [cguiStartButton, cguiQuitButton],
-                   [PySimpleGUI.Text()],
-                   [switch_button, sumogui_button, convert_xml_button],
-                   [cguiAddLoopButton, cguiCurrentLoopsNumber],
-                   [cguiNumberOfLoopsText, cguiNumberOfLoopsInputColumn],
-                   [PySimpleGUI.Text()],
-                   [cguiUpdateDelayText, cguiUpdateDelayInputColumn],
-                   [cguiLastTimeStepText, cguiLastTimeStepInputColumn],
-                   [PySimpleGUI.Text()],
-                   [PySimpleGUI.Text(numeric_error_msg + "Adjust config values. Must be numbers.")],
-                   [adjust_values_column],
-                   ]
+    _get_app()
 
+    window = ConfigWindow(num_of_loops, recent_sim_msg, numeric_error_msg)
+    window.show()
     numeric_error_msg = ""
-
-    global recent_sim_msg
-    window_msg = recent_sim_msg
-
-    return PySimpleGUI.Window('Configurations' + window_msg, cgui_layout, size=(cGUI_size_x, cGUI_size_y), resizable=True)
-
-
-def extend_cgui_with_adjustable_values():
-    """
-    Returns list of elements to add to cGUI layout.
-    """
-
-    global adjustable_config_values
-    new_layout_text = list()
-
-    for elem in adjustable_config_values:
-        if elem == "av_density":
-            new_layout_text.append([PySimpleGUI.Text("Base:", justification="center", text_color="Black")])
-        elif elem == "group_size_dfv_two_to_three":
-            new_layout_text.append([PySimpleGUI.Text("\nGroup Size:", justification="center", text_color="Black")])
-        elif elem == "ttc_lower_extreme_time":
-            new_layout_text.append([PySimpleGUI.Text("\nTime To Collision:", justification="center", text_color="Black")])
-        elif elem == "waiting_time_accepted_value":
-            new_layout_text.append([PySimpleGUI.Text("\nWaiting Time:", justification="center", text_color="Black")])
-        elif elem == "small_vehicle_size":
-            new_layout_text.append([PySimpleGUI.Text("\nVehicle Size:", justification="center", text_color="Black")])
-        elif elem == "lane_low_occupancy_rate":
-            new_layout_text.append([PySimpleGUI.Text("\nOccupancy:", justification="center", text_color="Black")])
-        elif elem == "child_age":
-            new_layout_text.append([PySimpleGUI.Text("\nChildren:", justification="center", text_color="Black")])
-        elif elem == "smombie_dfv":
-            new_layout_text.append([PySimpleGUI.Text("\nSmombies:", justification="center", text_color="Black")])
-        elif elem == "male_gender_dfv":
-            new_layout_text.append([PySimpleGUI.Text("\nGender:", justification="center", text_color="Black")])
-        elif elem == "impaired_vision_dfv":
-            new_layout_text.append([PySimpleGUI.Text("\nDisability:", justification="center", text_color="Black")])
-        elif elem == "walking_pedestrian_dfv":
-            new_layout_text.append([PySimpleGUI.Text("\nOther:", justification="center", text_color="Black")])
-
-        new_layout_text.append([PySimpleGUI.Text(pad(adjust_config_value(elem, 'text', 0)), justification="l"), PySimpleGUI.InputText(key=elem, default_text=adjust_config_value(elem, 'get', 0))])
-    return new_layout_text
-
-
-def pad(text: str) -> str:
-    """
-    Pads a string to a specific number of characters (with " ")
-
-    :param text: String to be padded.
-    """
-
-    string_goal_size_text = adjust_config_value('smombie_chance_at_start_age', 'text', 0) # change this if needed
-    string_goal_size = len(string_goal_size_text)
-    string_current_size = len(text)
-    padding_length = string_goal_size - string_current_size
-    for i in range(padding_length):
-        text += " "
-    return text
+    return window
 
 
 def run_gui():
-    """
-    Runs GUI during simulation.
-    """
+    """Runs the simulation window and handles user actions."""
 
     global gui
     global current_traci_step
-    if gui is not None:
-        gui.Element('-timestep-').update(
-            "Timestep: " + str(current_traci_step) + " (Update delay: " + str(cf.update_delay) + " steps)")
+
+    application = _get_app()
+
     if gui is None:
         gui = __create_gui()
-    elif int(current_traci_step) % cf.update_delay == 0:
-        gui.Element('-cdt-').update(values=__create_crossing_data_array())
+
+    gui.update_time_step(current_traci_step, cf.update_delay)
+
+    if cf.update_delay and int(current_traci_step) % cf.update_delay == 0:
+        gui.update_crossing_data(__create_crossing_data_array())
         sort_ages()
-        gui.Element('-ags-').update(values=ages)
+        gui.update_age_distribution(ages)
         sort_crossingIDs()
-        gui.Element('-cr-').update(values=crossingIDs)
-        gui.Element('-tp-').update("Pedestrians: " + str(total_pedestrians))
-        gui.Element('-v-').update("Vehicles: " + str(total_vehicles) + "  (AVs: " + str(total_av) + "/eHMI: " + str(total_ehmi) + ")")
+        gui.update_crossing_events(crossingIDs)
+        gui.update_counts(total_pedestrians, total_vehicles, total_av, total_ehmi)
 
         if cf.visualization_shown:
             vis_results()
 
-    event, values = gui.read(timeout=1)
+    application.processEvents()
 
-    if event == PySimpleGUI.WINDOW_CLOSED or event == 'Quit Application':
-        gui.close()
-        gui = None
-        return 'closed'
-    elif event == 'Stop':
+    if gui.stop_requested:
         close_gui()
         return 'stop'
-    elif event == 'Pause':
-        gui.Element('Pause').update('Continue')
-        while True:
-            event, values = gui.read()
-            if event == 'Pause':
-                gui.Element('Pause').update('Pause')
-                break
-            elif event == 'Stop':
+
+    if gui.quit_requested or gui.was_closed:
+        gui = None
+        return 'closed'
+
+    if gui.paused:
+        while gui is not None and gui.paused:
+            application.processEvents()
+            if gui.stop_requested:
                 close_gui()
                 return 'stop'
-            elif event == PySimpleGUI.WINDOW_CLOSED or event == 'Quit Application':
-                gui.close()
+            if gui.quit_requested or gui.was_closed:
                 gui = None
                 return 'closed'
+            time.sleep(0.05)
+
+    return None
 
 
 def close_gui() -> None:
-    """
-    Closes GUI running during simulation.
-    """
+    """Closes the simulation window."""
 
     global gui
     global current_traci_step
     global current_sim
     global recent_sim_msg
-    if gui != None:
+    if gui is not None:
         gui.close()
         gui = None
         recent_sim_msg = " (" + str(current_sim) + " stopped at " + str(current_traci_step) + ")"
@@ -562,36 +893,61 @@ def close_gui() -> None:
 
 
 def run_cgui() -> str:
-    """
-    Runs config GUI that is displayed prior to the simulation.
-    """
+    """Runs the configuration window and handles user interaction."""
+
     global in_loop
     global current_sim
     global numeric_error_msg
     global num_of_loops
     global cgui
+
+    application = _get_app()
+
     if cgui is None:
         cgui = __create_cgui()
 
     while True:
-        event, values = cgui.read(timeout=5)
+        if cgui is None:
+            return 'closed'
 
-        # get next config in loop data
-        if event == 'ss' and not in_loop and len(loop_data) != 0 or len(loop_data) != 0 and in_loop:
+        cgui.update_loop_info(num_of_loops)
+        application.processEvents()
+
+        if cgui.quit_requested or cgui.was_closed:
+            close_cgui()
+            return 'closed'
+
+        if cgui.add_loop_clicked:
+            cgui.add_loop_clicked = False
+            values = cgui.get_form_values()
+            if values['selected_scenario'] is None:
+                continue
+            try:
+                loops_to_add = int(values['loop_count'])
+                for _ in range(loops_to_add):
+                    num_of_loops += 1
+                    run_configuration = list()
+                    selected_index = values['selected_scenario']
+                    run_configuration.append(cf.scenarios[selected_index][0])
+                    run_configuration.append(cf.scenarios[selected_index][1])
+                    run_configuration.append(int(values['update_delay']))
+                    run_configuration.append(int(values['last_timestep']))
+                    for elem in adjustable_config_values:
+                        run_configuration.append(values['adjustable'][elem])
+                    loop_data.append(run_configuration)
+                numeric_error_msg = ""
+                cgui.set_error_message("")
+            except Exception:
+                numeric_error_msg = "(!ERROR: all values must be numeric!) "
+                cgui.set_error_message(numeric_error_msg)
+                return 'restart'
+
+        if (cgui.start_clicked and not in_loop and len(loop_data) != 0) or (len(loop_data) != 0 and in_loop):
             if not in_loop:
-                if values['sb']:
-                    cf.visualization_shown = True
-                else:
-                    cf.visualization_shown = False
-                if values['sgui']:
-                    cf.sumo_GuiOn = True
-                else:
-                    cf.sumo_GuiOn = False
-                if values['cxml']:
-                    cf.convert_to_csv_after_sim = True
-                else:
-                    cf.convert_to_csv_after_sim = False
-
+                values = cgui.get_form_values()
+                cf.visualization_shown = bool(values['visualization'])
+                cf.sumo_GuiOn = bool(values['sumo_gui'])
+                cf.convert_to_csv_after_sim = bool(values['convert_xml'])
             current_run_config = loop_data[0]
             current_sim = current_run_config[0]
             cf.sumocfgPath = current_run_config[1]
@@ -600,93 +956,63 @@ def run_cgui() -> str:
             for i, elem in enumerate(adjustable_config_values):
                 adjust_config_value(elem, 'adjust', current_run_config[4 + i])
             loop_data.pop(0)
-            num_of_loops = num_of_loops - 1
-            if num_of_loops == 0:
-                in_loop = False # Set in loop to False to prevent entering this if clause
-            else:
-                in_loop = True # Set to True after starting loop so it automatically enters this if clause
-
+            num_of_loops -= 1
+            in_loop = num_of_loops != 0
+            if cgui is not None:
+                cgui.start_clicked = False
             close_cgui()
             return 'sim_start'
 
-        # add config to loop data if button is pressed
-        if event == "Add Configuration to Loop" and len(values['-selectedscen-']) != 0:
-            try:
-                for i in range(int(values['-loop-'])):
-                    num_of_loops += 1
-                    run_configuration = list()
-                    run_configuration.append(cf.scenarios[values['-selectedscen-'][0]][0])
-                    run_configuration.append(cf.scenarios[values['-selectedscen-'][0]][1])
-                    run_configuration.append(int(values['-ud-']))
-                    run_configuration.append(int(values['-lts-']))
-                    for elem in adjustable_config_values:
-                        run_configuration.append(values[elem])
-                    loop_data.append(run_configuration)
-            except:
-                numeric_error_msg = "(!ERROR: all values must be numeric!) "
-                return 'restart'
+        if cgui.start_clicked and num_of_loops == 0:
+            values = cgui.get_form_values()
+            if cgui is not None:
+                cgui.start_clicked = False
+            if values['selected_scenario'] is None:
+                time.sleep(0.05)
+                continue
 
-        if event == PySimpleGUI.WINDOW_CLOSED or event == 'Quit Application':
-            close_cgui()
-            return 'closed'
+            cf.visualization_shown = bool(values['visualization'])
+            cf.sumo_GuiOn = bool(values['sumo_gui'])
+            cf.convert_to_csv_after_sim = bool(values['convert_xml'])
 
-        cgui.Element('-num_loops-').update('Currently added: ' + str(num_of_loops))
-
-        if num_of_loops != 0:
-            cgui.Element('ss').update("Start Loop")
-        else:
-            cgui.Element('ss').update('Start Simulation')
-
-        # start simulation and adjust all given values
-        if event == 'ss' and values['-selectedscen-'] != '' and num_of_loops == 0:
-            if values['sb']:
-                cf.visualization_shown = True
-            else:
-                cf.visualization_shown = False
-            if values['sgui']:
-                cf.sumo_GuiOn = True
-            else:
-                cf.sumo_GuiOn = False
-            if values['cxml']:
-                cf.convert_to_csv_after_sim = True
-            else:
-                cf.convert_to_csv_after_sim = False
-
-
-            if values['-ud-'] != '':
+            if values['update_delay']:
                 try:
-                    cf.update_delay = int(values['-ud-'])
-                except:
+                    cf.update_delay = int(values['update_delay'])
+                except Exception:
                     pass
 
-            if values['-lts-'] != '':
+            if values['last_timestep']:
                 try:
-                    cf.run_sim_until_step = int(values['-lts-'])
-                except:
+                    cf.run_sim_until_step = int(values['last_timestep'])
+                except Exception:
                     pass
 
-            for i in range(len(adjustable_config_values)):
-                if "interrupt" == str(adjust_config_value(adjustable_config_values[i], 'adjust', values[adjustable_config_values[i]])):
+            for elem in adjustable_config_values:
+                result = adjust_config_value(elem, 'adjust', values['adjustable'][elem])
+                if str(result) == 'interrupt':
                     numeric_error_msg = "(!ERROR: all values must be numeric!) "
+                    if cgui is not None:
+                        cgui.set_error_message(numeric_error_msg)
                     return 'restart'
 
-            if values['-selectedscen-']:
-                current_sim = cf.scenarios[values['-selectedscen-'][0]][0]
-                cf.sumocfgPath = cf.scenarios[values['-selectedscen-'][0]][1]
-                close_cgui()
-                return 'sim_start'
+            selected_index = values['selected_scenario']
+            current_sim = cf.scenarios[selected_index][0]
+            cf.sumocfgPath = cf.scenarios[selected_index][1]
+            close_cgui()
+            return 'sim_start'
+
+        time.sleep(0.05)
+
 
 
 def close_cgui() -> None:
-    """
-    Closes config GUI.
-    """
+    """Closes the configuration window."""
 
     global cgui
-    if not (cgui == None):
+    if cgui is not None:
         cgui.close()
         cgui = None
-        return 'closed'
+
 
 
 def get_scenario_name(path: str) -> str:
