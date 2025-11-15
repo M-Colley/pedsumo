@@ -15,15 +15,15 @@ except:
 
 setup(
   name = 'PedSUMO',         # How you named your package folder (MyLib)
-  packages = find_packages(),   # Chose the same as "name"
+  packages = find_packages(),   # Choose the same as "name"
   version = '0.0.1',      # Start with a small number and increase it with every change you make
-  license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
+  license='MIT',        # Choose a license from here: https://help.github.com/articles/licensing-a-repository
   description = short_description[0],   # Give a short description about your library
   long_description=long_description,
   long_description_content_type='text/markdown',
   author = 'Mark Colley',                   # Type in your name
   author_email = 'mark.colley@yahoo.de',      # Type in your E-Mail
-  url = 'm-colley.github.io',   # Provide either the link to your github or to your website
+  url = 'm-colley.github.io',   # Provide either the link to your GitHub or to your website
   download_url = '',   # I explain this later on
   keywords = ['simulation', 'pedestrian', 'automated-vehicles', 'ehmi', 'llm'],   # Keywords that define your package best
   install_requires=[            # I get to this in a second
@@ -37,13 +37,14 @@ setup(
       ],
   include_package_data=True,
   classifiers=[
-    'Development Status :: 3 - Alpha',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
+    'Development Status :: 3 - Alpha',      # Choose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
     'Intended Audience :: Developers',      # Define that your audience is developers
     'Topic :: Software Development :: Build Tools',
     'License :: OSI Approved :: MIT License',   # Again, pick a license
-    'Programming Language :: Python :: 3',      #Specify which Python versions that you want to support
+    'Programming Language :: Python :: 3',      #Specify which Python versions you want to support
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
   ],
 )
