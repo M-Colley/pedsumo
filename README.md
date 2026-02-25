@@ -107,6 +107,13 @@ pip install -r [path to requirements_llm.txt of this project]
 
 in the console (e.g., `Command Prompt` in Windows. You may have to use `pip3` if `pip` does not work.)
 
+### Run automated tests
+
+From the project root, run:
+```console
+python -m unittest discover -v
+```
+
 The resources of this project are SUMO scenarios. 'Scenario' may refer to all files needed to run a simulation, or it may refer to the simulation map itself. Available scenarios were mentioned above.
 
 There are two options to use the program: via a GUI or command line. You can technically start SumoWithAVs without the command line or GUI (by setting `guiOn` and `sumo_GuiOn` to `False` in `config.py` and running `main.py`), but this is generally not advised. If you do, make sure to include an `end value` for a timestep in the `.sumocfg` of the scenario, or else the simulation will always stop at 3600 timesteps. Example:
@@ -432,4 +439,3 @@ Remember to be careful because disabling these modes will make it more difficult
 - [SUMO](https://sumo.dlr.de/docs/Libraries_Licenses.html)
 - [Matplotlib](https://matplotlib.org/stable/users/project/license.html)
 - [PySide6](https://doc.qt.io/qtforpython/licenses.html)
-
