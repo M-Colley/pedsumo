@@ -1,0 +1,72 @@
+cff-version: 1.2.0
+title: >-
+  PedSUMO: Simulacra of Automated Vehicle-Pedestrian Interaction Using SUMO To
+  Study Large-Scale Effects
+message: >-
+  If you use PedSUMO in your research, please cite the HRI '24 paper below.
+type: software
+authors:
+  - given-names: Mark
+    family-names: Colley
+    email: m.colley@ucl.ac.uk
+    affiliation: University College London
+  - given-names: Julian
+    family-names: Czymmeck
+    affiliation: Ulm University
+  - given-names: Mustafa
+    family-names: Kücükkocak
+    affiliation: Ulm University
+  - given-names: Pascal
+    family-names: Jansen
+    affiliation: Ulm University
+  - given-names: Enrico
+    family-names: Rukzio
+    affiliation: Ulm University
+repository-code: 'https://github.com/M-Colley/pedsumo'
+abstract: >-
+  PedSUMO extends Eclipse SUMO with demographic-dependent pedestrian crossing
+  behaviour towards automated vehicles, so that the macroscopic traffic effects
+  of external communication (eHMIs) and of pedestrians defying vehicle priority
+  can be studied at city scale.
+keywords:
+  - automated vehicles
+  - pedestrian simulation
+  - eHMI
+  - traffic simulation
+  - SUMO
+  - human-robot interaction
+license: MIT
+version: 1.0.0
+preferred-citation:
+  type: conference-paper
+  title: >-
+    PedSUMO: Simulacra of Automated Vehicle-Pedestrian Interaction Using SUMO To
+    Study Large-Scale Effects
+  authors:
+    - given-names: Mark
+      family-names: Colley
+    - given-names: Julian
+      family-names: Czymmeck
+    - given-names: Mustafa
+      family-names: Kücükkocak
+    - given-names: Pascal
+      family-names: Jansen
+    - given-names: Enrico
+      family-names: Rukzio
+  collection-title: >-
+    Proceedings of the 2024 ACM/IEEE International Conference on Human-Robot
+    Interaction (HRI '24)
+  conference:
+    name: >-
+      2024 ACM/IEEE International Conference on Human-Robot Interaction (HRI '24)
+    city: Boulder
+    region: Colorado
+    country: US
+  publisher:
+    name: Association for Computing Machinery
+    city: New York
+    country: US
+  year: 2024
+  month: 3
+  doi: 10.1145/3610977.3637478
+  url: 'https://doi.org/10.1145/3610977.3637478'

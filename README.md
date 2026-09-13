@@ -9,6 +9,8 @@
 Short Paper at [HRI '24](https://humanrobotinteraction.org/2024/), doi: [10.1145/3610977.3637478](https://dl.acm.org/doi/10.1145/3610977.3637478)
 
 [![DOI:10.1145/3610977.3637478](https://zenodo.org/badge/DOI/10.1145/3610977.3637478.svg)](https://doi.org/10.1145/3610977.3637478)
+[![tests](https://github.com/M-Colley/pedsumo/actions/workflows/tests.yml/badge.svg)](https://github.com/M-Colley/pedsumo/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 
 [Mark Colley](https://scholar.google.de/citations?user=Kt5I7wYAAAAJ&hl=de&oi=ao), Julian Czymmeck, Mustafa Kücükkocak, [Pascal Jansen](https://scholar.google.de/citations?user=cR1_0-EAAAAJ&hl=en), [Enrico Rukzio](https://scholar.google.de/citations?user=LEu4D5gAAAAJ&hl=de&oi=ao)
@@ -114,6 +116,13 @@ From the project root, run:
 python -m unittest discover -v
 ```
 
+The tests replace `traci`, `sumolib` and the GUI with stubs, so they run without a SUMO installation
+and without a display, and complete in under a second. The same suite runs on CI against Linux,
+Windows and macOS for Python 3.11-3.13, alongside a short headless simulation that checks a fixed
+seed reproduces identical results.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to contribute.
+
 The resources of this project are SUMO scenarios. 'Scenario' may refer to all files needed to run a simulation, or it may refer to the simulation map itself. Available scenarios were mentioned above.
 
 There are two options to use the program: via a GUI or command line. You can technically start SumoWithAVs without the command line or GUI (by setting `guiOn` and `sumo_GuiOn` to `False` in `config.py` and running `main.py`), but this is generally not advised. If you do, make sure to include an `end value` for a timestep in the `.sumocfg` of the scenario, or else the simulation will always stop at 3600 timesteps. Example:
@@ -179,35 +188,75 @@ python main.py --help
 ```
 This will show you the following list:
 ```console
+usage: main.py [-h] [--nogui] [-v {none,sparse,normal,verbose}]
+               [--scenario {Small_Test_Network,Ingolstadt,Ulm,Bologna_small,Wildau,Monaco,Manhattan}]
+               [--scenario_path SCENARIO_PATH] [--time_steps TIME_STEPS] [--routing-threads ROUTING_THREADS]
+               [--rerouting-threads REROUTING_THREADS] [-l] [--av_step_size {[0.0,1.0]}]
+               [--ehmi_step_size {[0.0,1.0]}] [--defiance_step_size {[0.0,1.0]}] [--density {[0.0,1.0]}]
+               [--defiance {[0.0,1.0]}] [--ehmi {[0.0,1.0]}] [--seed SEED] [--prob_computation {normal,llm}]
+               [--transformers_model TRANSFORMERS_MODEL]
+
 options:
   -h, --help            show this help message and exit
   --nogui               run the commandline version of sumo
-  -v {n,v}, --verbosity {n,v}
-                        verbosity of the command line output. Options are n (default) and v
-  --scenario {Ulm,Ingolstadt,Monaco,Bologna,Wildau,Manhattan,Test}
-                        default = Test. Defines the scenario you want to simulate. Choices are: Ulm, Ingolstadt, Monaco, Bologna, Wildau, Manhattan and Test
+  -v, --verbosity {none,sparse,normal,verbose}
+                        verbosity of the command line output. Options are none, sparse, normal (default) and
+                        verbose
+  --scenario {Small_Test_Network,Ingolstadt,Ulm,Bologna_small,Wildau,Monaco,Manhattan}
+                        default = Small_Test_Network. Defines the scenario you want to simulate. Choices
+                        are: ['Small_Test_Network', 'Ingolstadt', 'Ulm', 'Bologna_small', 'Wildau',
+                        'Monaco', 'Manhattan']
   --scenario_path SCENARIO_PATH
-                        Alternative to --scenario: defines the path to the .sumocfg you want to simulate. Value should be an existing path to a valid .sumocfg file.
+                        Alternative to --scenario: defines the path to the .sumocfg you want to simulate.
+                        Value should be an existing path to a valid .sumocfg file.
+  --time_steps TIME_STEPS
+                        Defines the amount of seconds simulated, after which the simulation will terminate.
+                        Does not equal real time seconds. A value of 3600 would mean that one hour would get
+                        simulated.
+  --routing-threads ROUTING_THREADS
+                        Activates routing multithreading. Needs number of cores to utilize.
+  --rerouting-threads REROUTING_THREADS
+                        Activates rerouting multithreading. Needs number of cores to utilize.
+  --seed SEED           default = 42. Seed for the random number generator. Runs with the same seed,
+                        scenario and parameters are reproducible; vary the seed to obtain independent
+                        stochastic replications of the same configuration.
+  --prob_computation {normal,llm}
+                        Method to determine the probability for a pedestrian to cross. Options are normal
+                        (default) and llm.
+  --transformers_model TRANSFORMERS_MODEL
+                        Allows to specify which transformers model to use. Only relevant if prob_computation
+                        is set to llm. Attention: Make sure that your hardware supports the model and that
+                        the model is supported by the transformers pipeline method.
 
 loop options:
-  -l, --loop            run the simulation multiple times in a row, looping through av_density, ehmi_density and base_automated_vehicle_defiance.
+  -l, --loop            run the simulation multiple times in a row, looping through av_density, ehmi_density
+                        and base_automated_vehicle_defiance.
   --av_step_size {[0.0,1.0]}
-                        default = 0.1. Only useful when the --loop option is set. Defines the step size for the density of automated vehicles in the loop. Value should be between 0.0 and 1.0 as float.
-                        Setting this value to exactly 0.0 disables looping over av_density instead.
+                        default = 0.1. Only useful when the --loop option is set. Defines the step size for
+                        the density of automated vehicles in the loop. Value should be between 0.0 and 1.0
+                        as float. Setting this value to exactly 0.0 disables looping over av_density
+                        instead.
   --ehmi_step_size {[0.0,1.0]}
-                        default = 0.1. Only useful when the --loop option is set. Defines the step size for the density of automated vehicles with ehmi in the loop. Value should be between 0.0 and 1.0
-                        as float. Setting this value to exactly 0.0 disables looping over ehmi_density instead.
+                        default = 0.1. Only useful when the --loop option is set. Defines the step size for
+                        the density of automated vehicles with ehmi in the loop. Value should be between 0.0
+                        and 1.0 as float. Setting this value to exactly 0.0 disables looping over
+                        ehmi_density instead.
   --defiance_step_size {[0.0,1.0]}
-                        default = 0.1. Only useful when the --loop option is set. Defines the step size for the base automated vehicle defiance in the loop.Value should be between 0.0 and 1.0 as
-                        float.Setting this value to exactly 0.0 disables looping over this variable instead.
+                        default = 0.1. Only useful when the --loop option is set. Defines the step size for
+                        the base automated vehicle defiance in the loop.Value should be between 0.0 and 1.0
+                        as float.Setting this value to exactly 0.0 disables looping over this variable
+                        instead.
   --density {[0.0,1.0]}
-                        default = 0.0. Only useful when combined with the --loop option. Defines the lower bound for the used av_density in the loop. Value should be between 0.0 and 1.0 as float.
+                        default = 0.0. Only useful when combined with the --loop option. Defines the lower
+                        bound for the used av_density in the loop. Value should be between 0.0 and 1.0 as
+                        float.
   --defiance {[0.0,1.0]}
-                        default = 0.0. Only useful when combined with the --loop option. Defines the lower bound for the used base_automated_vehicle_defiance in the loop. Value should be between 0.0
-                        and 1.0 as float.
-  --ehmi {[0.0,1.0]}    default = 0.0. Only useful when combined with the --loop option.Defines the lower bound for the used ehmi_density in the loop. Value should be between 0.0 and 1.0 as float.
-  --prob_computation {normal,llm} default = normal. Method to determine the probability for a pedestrian to cross. Options are normal (default) and llm.
-  --transformers_model default = declare-lab/flan-alpaca-large Allows to specify which transformers model to use. Only relevant if prob_computation is set to llm. Attention: Make sure that your hardware supports the model and that the model is supported by the transformers pipeline method
+                        default = 0.0. Only useful when combined with the --loop option. Defines the lower
+                        bound for the used base_automated_vehicle_defiance in the loop. Value should be
+                        between 0.0 and 1.0 as float.
+  --ehmi {[0.0,1.0]}    default = 0.0. Only useful when combined with the --loop option.Defines the lower
+                        bound for the used ehmi_density in the loop.Value should be between 0.0 and 1.0 as
+                        float.
 ```
 
 Remember: it is sensible to disable the QuickEdit Mode and the Insert Mode (in Windows).
@@ -218,6 +267,44 @@ A classic code would be
 python main.py --nogui --scenario Ulm --loop --av_step_size 0.05 --ehmi_step_size 0.05 --defiance_step_size 0.05
 ```
 Note: --density starts at 0.0 by default, thus, the first scenarios will not lead to relevant (in our sense) events.
+
+
+### Reproducibility and Seeding
+
+A PedSUMO run is a function of its parameters and its random seed. Running the same scenario with the
+same parameters and the same `--seed` reproduces the same crossing decisions, on any platform and in
+any process:
+
+```console
+python main.py --nogui --scenario Ulm --time_steps 3600 --seed 42
+```
+
+The seed defaults to `42` (`random_seed` in `config.py`) and is recorded in the `random_seed` column
+of every `probabilities-*.csv`, together with all model parameters, so a results file documents the
+run that produced it.
+
+To obtain **independent stochastic replications** of one configuration - which is what you need for
+confidence intervals across runs - vary the seed:
+
+```console
+for seed in 1 2 3 4 5; do
+  python main.py --nogui --scenario Ulm --time_steps 3600 --seed $seed
+done
+```
+
+> **Note for results produced before v1.0.0:** earlier versions seeded the RNG but then iterated over
+> Python `set`s of SUMO IDs when assigning automated vehicles, generating pedestrian attributes and
+> evaluating crossings. Because CPython randomises string hashing per process, the order of those
+> random draws differed between runs, and identical configurations could produce different crossing
+> probabilities and even different numbers of recorded decisions. Runs from v1.0.0 onwards are
+> reproducible; earlier results are not comparable at the level of individual decisions.
+
+
+### Running headless
+
+The configuration and simulation GUIs are imported only when they are actually shown, so a `--nogui`
+run needs neither `PySide6`, `screeninfo` and `matplotlib` nor an attached display. This makes
+PedSUMO usable on CI runners, compute clusters and in Colab with just SUMO and `sumolib` installed.
 
 
 ### Configurations

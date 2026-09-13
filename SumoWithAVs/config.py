@@ -26,6 +26,9 @@ rerouting_threads = 1
 multithreading_routing_active = False
 routing_threads = 1
 
+random_seed = 42  # seed for the random number generator; same seed + same parameters => identical results.
+                  # Override per run with --seed to obtain independent stochastic replications.
+
 update_delay = 50  # delay after which gui updates data or terminal outputs simulation step
 run_sim_until_step = -1  # Specified timestep until the simulation will run. Default should always be -1.
                         # Overwrites last timestep in sumocfg if not -1. Higher timestep may not be supported by scenario.
@@ -82,6 +85,8 @@ ttc_dfv_under_lower_bound = 0.1     # "usually pedestrians do not cross when TTC
 ttc_dfv_over_upper_bound = 3.0      # "and very likely cross when it is higher than 7s"
 ttc_base_at_lower_bound = 0.2       # values used for linear increase between lower and upper bound
 ttc_base_at_upper_bound = 2.0
+standing_vehicle_ttc = 10.0         # ttc assumed for a vehicle standing still (no collision course)
+no_vehicle_ttc = 100.0              # ttc placeholder when no vehicle approaches the crossing at all
 
 waiting_time_accepted_value = 28
 waiting_time_dfv_under_accepted_value = 1.0   # suggestion: linear increase

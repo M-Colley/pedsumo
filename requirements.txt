@@ -1,8 +1,16 @@
+# Simulation core.
+# traci is NOT listed here: it ships with Eclipse SUMO and is imported from $SUMO_HOME/tools,
+# so a working SUMO installation with SUMO_HOME set is a prerequisite (see README).
+sumolib>=1.25.0
+
+# Configuration and simulation GUI. Only imported when the GUI is actually shown, so a headless
+# run (--nogui) works without these installed.
+PySide6>=6.7.3
+screeninfo
+
+# Plotting: the in-simulation visualisation and the analysis in SUMO_Colab.ipynb.
 matplotlib>=3.10.8
+
+# Result analysis in SUMO_Colab.ipynb.
 pandas>=2.3.3
 numpy>=1.26.4
-sumolib>=1.25.0
-screeninfo
-PySide6>=6.7.3
-
-

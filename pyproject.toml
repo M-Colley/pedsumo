@@ -1,0 +1,6 @@
+# Build configuration. Project metadata lives in setup.py.
+# Declaring a build backend is required for PEP 517 builds; without it `pip install .` falls back to
+# legacy behaviour that is no longer guaranteed on current pip versions.
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
