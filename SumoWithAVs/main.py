@@ -4,20 +4,43 @@ import datetime as dt
 import time
 import os
 import random
+import re
+import subprocess
 import sys
 import argparse
-import time
 import csv
-import gui
 from enum import IntEnum
 import config as cf
 import xml2csvSWA
-# only import if available
 import importlib.util
-try:
-  from transformers import pipeline
-except:
-  pipeline = None
+
+
+def load_transformers_pipeline(model_name: str):
+    """
+    Imports transformers lazily and returns a ready text2text pipeline for the given model.
+
+    transformers pulls in torch and costs tens of seconds to import, so it must not be imported at module
+    load time: the default "normal" probability method never needs it. Raises ImportError with an
+    actionable message when the optional dependency is missing.
+
+    :param model_name: name of the model to hand to transformers.pipeline
+    """
+    if importlib.util.find_spec("transformers") is None:
+        raise ImportError("--prob_computation llm requires the optional LLM dependencies. "
+                          "Install them with: pip install -r requirements_llm.txt")
+    from transformers import pipeline
+
+    # device=0 pins the model to the first CUDA GPU, which fails outright on CPU-only machines.
+    # Fall back to CPU (-1) whenever torch reports no usable GPU.
+    device = -1
+    try:
+        import torch
+        if torch.cuda.is_available():
+            device = 0
+    except ImportError:
+        pass
+    return pipeline(model=model_name, device=device)
+
 
 # we need to import some python modules from the $SUMO_HOME/tools directory
 if 'SUMO_HOME' in os.environ:
@@ -30,6 +53,24 @@ import traci
 
 
 results_folder_for_next_sim = ""    # path to created folder for results of next simulation
+
+# The gui module is imported lazily. Importing it pulls in PySide6, matplotlib and screeninfo and
+# queries the attached monitors at import time, which fails on headless machines. A --nogui run needs
+# none of that, so importing it eagerly made batch runs on CI, clusters and Colab impossible.
+gui = None
+
+
+def load_gui():
+    """
+    Imports the gui module on demand and caches it in the module-level ``gui`` global.
+
+    Only called when cf.guiOn is set, i.e. when a GUI is actually going to be shown.
+    """
+    global gui
+    if gui is None:
+        import gui as gui_module
+        gui = gui_module
+    return gui
 
 
 def get_options():
@@ -99,7 +140,11 @@ def get_options():
                                  "Only useful when combined with the --loop option."
                                  "Defines the lower bound for the used ehmi_density in the loop."
                                  "Value should be between 0.0 and 1.0 as float.")
-    arg_parser.add_argument("--prob_computation", dest="prob_computation", type=str, default="normal", 
+    arg_parser.add_argument("--seed", dest="seed", type=int, default=cf.random_seed,
+                            help="default = " + str(cf.random_seed) + ". Seed for the random number generator. "
+                                 "Runs with the same seed, scenario and parameters are reproducible; vary the seed "
+                                 "to obtain independent stochastic replications of the same configuration.")
+    arg_parser.add_argument("--prob_computation", dest="prob_computation", type=str, default="normal",
                             choices=("normal", "llm"), help="Method to determine the probability for a pedestrian to cross. Options are normal (default) and llm.")
     arg_parser.add_argument("--transformers_model", dest="transformers_model", type=str, default="declare-lab/flan-alpaca-large",
                             help="Allows to specify which transformers model to use. Only relevant if prob_computation is set to llm. "
@@ -171,6 +216,24 @@ def generate_pedestrian_attributes(ped_id: str):
     cf.ped_attribute_dict[ped_id] = ped_dict_entry
 
 
+# SUMO names a pedestrian crossing lane ":<junctionID>_c<crossingIndex>_<laneIndex>".
+# Matching that shape is both stricter and wider than the previous '"c" in lane and "cluster" not in lane'
+# test: stricter because an ordinary lane merely containing the letter "c" is no longer scanned, and wider
+# because junctions that netconvert merged into a "cluster_..." node are no longer skipped. Those clusters
+# are the larger, busier intersections of an OSM import - in the bundled Ulm scenario they account for
+# 1313 of 3299 crossings, none of which used to be simulated.
+CROSSING_LANE_PATTERN = re.compile(r"^:.+_c\d+_\d+$")
+
+
+def is_crossing_lane(lane: str) -> bool:
+    """
+    Returns True if the given lane ID is a pedestrian crossing lane.
+
+    :param lane: lane ID as reported by traci.lane.getIDList()
+    """
+    return CROSSING_LANE_PATTERN.match(lane) is not None
+
+
 def create_incoming_lanes_dictionary() -> dict[str, set[str]]:
     """
     Creates a dictionary containing a set of all incoming lanes into each unprioritized crossing in the simulation.
@@ -181,7 +244,7 @@ def create_incoming_lanes_dictionary() -> dict[str, set[str]]:
     # get all lanes
     for lane in traci.lane.getIDList():
         # filter for crossings
-        if ("c" in lane) and ("cluster" not in lane):
+        if is_crossing_lane(lane):
             internal_foes_dict[lane] = traci.lane.getInternalFoes(lane)
     if verbosity >= Verbosity.VERBOSE:
         print("internal foes dict: " + str(internal_foes_dict))
@@ -218,7 +281,8 @@ def adjust_newly_added_entities(vehicles: set[str], last_step_vehicles: set[str]
     :param last_step_pedestrians: set of all pedestrians existing in the prior simulation step
     """
     # iterate through vehicles added in current step
-    for new_vehicle in (set(vehicles) - last_step_vehicles):
+    # sorted() keeps the order of random draws stable across runs (see module docstring on determinism)
+    for new_vehicle in sorted(set(vehicles) - last_step_vehicles):
         # with a chance of <av_density>, "mark" vehicle as av
         if random.random() <= av_density:
             avs.add(new_vehicle)
@@ -230,7 +294,7 @@ def adjust_newly_added_entities(vehicles: set[str], last_step_vehicles: set[str]
                 traci.vehicle.setColor(new_vehicle, cf.av_color)
 
     # iterate through pedestrians added in current step
-    for new_pedestrian in (set(pedestrians) - last_step_pedestrians):
+    for new_pedestrian in sorted(set(pedestrians) - last_step_pedestrians):
         generate_pedestrian_attributes(new_pedestrian)
 
 
@@ -247,7 +311,7 @@ def find_pedestrians_about_to_enter_unprioritized_crossing(pedestrians: set[str]
     :param crossing_waiting_dict: dictionary mapping crossings to a set of the waiting pedestrian's IDs
     """
     # loop through all pedestrians not known to be about to cross
-    not_waiting_pedestrians = set(pedestrians) - set(waiting_pedestrians.keys())
+    not_waiting_pedestrians = sorted(set(pedestrians) - set(waiting_pedestrians.keys()))
     for pedestrian in not_waiting_pedestrians:
         # filters for pedestrians about to enter a crossing
         next_edge = traci.person.getNextEdge(pedestrian)
@@ -353,10 +417,9 @@ def get_waiting_time_defiance_factor(waiting_time: int) -> float:
                * cf.waiting_time_dfv_over_accepted_value_increase_per_second
 
 
-def get_smombie_defiance_factor(pedestrian: str) -> float:
+def get_smombie_distraction_chance(pedestrian: str) -> float:
     """
-    Dependent on age, randomly decides whether a pedestrian is distracted by a smartphone or not.
-    If a pedestrian is deemed as distracted, this function returns the smombie defiance factor.
+    Returns the age-dependent probability that the given pedestrian is distracted by a smartphone.
 
     :param pedestrian: string ID of the current pedestrian
     """
@@ -372,9 +435,19 @@ def get_smombie_defiance_factor(pedestrian: str) -> float:
         distraction_chance = cf.smombie_chance_at_peak_age - (pedestrian_age - cf.smombie_peak_age) \
                              * (cf.smombie_chance_at_peak_age - cf.smombie_chance_at_end_age) \
                              / (cf.smombie_end_age - cf.smombie_peak_age)
-    if random.random() <= distraction_chance:   # pedestrian is distracted with smartphone
+    return distraction_chance
+
+
+def get_smombie_defiance_factor(pedestrian: str) -> float:
+    """
+    Dependent on age, randomly decides whether a pedestrian is distracted by a smartphone or not.
+    If a pedestrian is deemed as distracted, this function returns the smombie defiance factor.
+
+    :param pedestrian: string ID of the current pedestrian
+    """
+    if random.random() <= get_smombie_distraction_chance(pedestrian):   # distracted with smartphone
         return cf.smombie_dfv
-    else:                                       # pedestrian isn't distracted
+    else:                                                               # pedestrian isn't distracted
         return 1.0
 
 
@@ -385,7 +458,8 @@ def get_child_present_defiance_factor(present_pedestrians: set[str]) -> float:
 
     :param present_pedestrians: set of pedestrian string IDs of pedestrians waiting at the crossing
     """
-    for pedestrian in present_pedestrians:
+    # sorted() so that the child whose gender decides the factor does not depend on set iteration order
+    for pedestrian in sorted(present_pedestrians):
         # if pedestrian is a child according to the age specified in config.py
         if cf.ped_attribute_dict[pedestrian]["age"] <= cf.child_age:
             # child is male
@@ -482,7 +556,8 @@ def get_road_occupancy_defiance_factor(incoming_lanes: set[str]) -> float:
     :param incoming_lanes: set of string IDs of all incoming lanes
     """
     sum_of_occupancy_rates = 0.0
-    for incoming_lane in incoming_lanes:
+    # sorted() so the floating-point summation order is identical across runs
+    for incoming_lane in sorted(incoming_lanes):
         sum_of_occupancy_rates += traci.lane.getLastStepOccupancy(incoming_lane)
     avg_occupancy_rate = sum_of_occupancy_rates / len(incoming_lanes)
     if avg_occupancy_rate <= cf.lane_low_occupancy_rate:                    # occupancy rate low
@@ -566,7 +641,9 @@ def generate_prompt_for_crossing_decision(pedestrian: str, waiting_pedestrians: 
     prompt_gender = "You are " +  str(cf.ped_attribute_dict[pedestrian]["gender"]) + ". "
     prompt_waiting_time = "You have been waiting for " + str(round(waiting_pedestrians[pedestrian], 4)) + " seconds. "
 	
-    isDistracted = True if random.random() <= cf.smombie_base_chance else False
+    # use the same age-dependent distraction chance as the analytical model rather than the flat base chance,
+    # so the "normal" and "llm" methods describe the same pedestrian
+    isDistracted = random.random() <= get_smombie_distraction_chance(pedestrian)
     if isDistracted:
         prompt_distracted = "You are distracted by your smartphone. "
     else:
@@ -578,10 +655,12 @@ def generate_prompt_for_crossing_decision(pedestrian: str, waiting_pedestrians: 
         prompt_child_present = "There are children in your vicinity. "
 		
 		
+    # get_ehmi_defiance_factor returns 1.0 when the closest vehicle has NO eHMI, so the 1.0 branch is the
+    # "no interface" case. Getting this the wrong way round silently inverts every eHMI prompt.
     if get_ehmi_defiance_factor(closest_vehicle, ehmi) == 1.0:
-        prompt_ehmi = "The approaching automated vehicle has an interface attached that communicates with you. "
-    else:
         prompt_ehmi = "The approaching automated vehicle does not have an interface attached that communicates with you. "
+    else:
+        prompt_ehmi = "The approaching automated vehicle has an interface attached that communicates with you. "
 	
     if get_ped_speed_defiance_factor(pedestrian) == 1.0:
         prompt_walking = "You are not walking. "
@@ -611,16 +690,18 @@ def run():
     avs = set()
     ehmi = set()
 
-    if options.prob_computation == "llm":  
+    model = None
+    if options.prob_computation == "llm":
         print("LLM is used for computation of probabilities to cross")
-        print("The chosen LLM model is: " +options.transformers_model)
+        print("The chosen LLM model is: " + options.transformers_model)
         # load model only if that method is chosen
         # potential choices: declare-lab/flan-alpaca-xl, declare-lab/flan-alpaca-gpt4-xl
-        transformers_spec = importlib.util.find_spec("transformers")
-        found_transformers = transformers_spec is not None
-        model = pipeline(model=options.transformers_model, device=0)
-        
-    random.seed(42)
+        try:
+            model = load_transformers_pipeline(options.transformers_model)
+        except ImportError as import_error:
+            sys.exit(str(import_error))
+
+    random.seed(options.seed)
 
     global results_folder_for_next_sim
     #probabilities_file = open(results_folder_for_next_sim + '/probabilities-' + results_folder_for_next_sim.rsplit('/', 1)[-1] + '.csv', 'w', newline='')
@@ -651,277 +732,284 @@ def run():
                             'street_width_defiance_factor', 'child_present_defiance_factor',
                             'vehicle_size_defiance_factor', 'occupancy_rate_defiance_factor',
                             'ped_speed_defiance_factor', 'smombie_defiance_factor', 'waiting_time_defiance_factor',
-                            'attribute_defiance_factor', 'probability_estimation_method']
+                            'attribute_defiance_factor', 'probability_estimation_method', 'random_seed']
     probabilities_writer.writerow(probabilities_header)
 
-    sim_start_time = time.perf_counter()
+    try:
+        sim_start_time = time.perf_counter()
 
-    crossing_incidents = 0
+        crossing_incidents = 0
 
-    while traci.simulation.getTime() <= cf.run_sim_until_step:      # start of the main simulation loop
+        while traci.simulation.getTime() <= cf.run_sim_until_step:      # start of the main simulation loop
 
-        if cf.guiOn:
-            if check_gui():
-                break
-            update_general_numbers(len(avs), len(ehmi))
+            if cf.guiOn:
+                if check_gui():
+                    break
+                update_general_numbers(len(avs), len(ehmi))
 
-        traci.simulationStep()  # Step ahead in simulation
+            traci.simulationStep()  # Step ahead in simulation
 
-        if not cf.guiOn and traci.simulation.getTime() % cf.update_delay == 0 and verbosity >= Verbosity.NORMAL:
-            print("-----------------------------------------------")
-            print("Simulation step: " + str(step + 1))
+            if not cf.guiOn and traci.simulation.getTime() % cf.update_delay == 0 and verbosity >= Verbosity.NORMAL:
+                print("-----------------------------------------------")
+                print("Simulation step: " + str(step + 1))
 
-        vehicles = traci.vehicle.getIDList()                        # list of all vehicles currently simulated
-        pedestrians = traci.person.getIDList()                      # list of all pedestrians currently simulated
+            vehicles = traci.vehicle.getIDList()                        # list of all vehicles currently simulated
+            pedestrians = traci.person.getIDList()                      # list of all pedestrians currently simulated
 
-        increment_pedestrian_waiting_time(waiting_pedestrians)
+            increment_pedestrian_waiting_time(waiting_pedestrians)
 
-        # determine terminated vehicles and pedestrians
-        terminated_vehicles = last_step_vehicles - set(vehicles)
-        terminated_pedestrians = last_step_pedestrians - set(pedestrians)
+            # determine terminated vehicles and pedestrians
+            terminated_vehicles = last_step_vehicles - set(vehicles)
+            terminated_pedestrians = last_step_pedestrians - set(pedestrians)
 
-        # remove pedestrians that left the simulation from ped_attribute_dict
-        for terminated_pedestrian in terminated_pedestrians:
-            del cf.ped_attribute_dict[terminated_pedestrian]
+            # remove pedestrians that left the simulation from ped_attribute_dict
+            for terminated_pedestrian in terminated_pedestrians:
+                del cf.ped_attribute_dict[terminated_pedestrian]
 
-        # remove vehicles that left the simulation from avs and ehmi
-        avs = avs - terminated_vehicles
-        ehmi = ehmi - terminated_vehicles
+            # remove vehicles that left the simulation from avs and ehmi
+            avs = avs - terminated_vehicles
+            ehmi = ehmi - terminated_vehicles
 
-        adjust_newly_added_entities(vehicles, last_step_vehicles, avs, ehmi, pedestrians, last_step_pedestrians)
+            adjust_newly_added_entities(vehicles, last_step_vehicles, avs, ehmi, pedestrians, last_step_pedestrians)
 
-        find_pedestrians_about_to_enter_unprioritized_crossing(pedestrians, waiting_pedestrians, crossing_waiting_dict)
+            find_pedestrians_about_to_enter_unprioritized_crossing(pedestrians, waiting_pedestrians, crossing_waiting_dict)
 
-        # iterate through each unprioritized crossing with pedestrians about to cross
-        for crossing in crossing_waiting_dict:
-            closest_vehicles_dict = {}      # dict with entries for vehID, distance and ttc for each lane
-            closest_vehicle_total = ""
-            lowest_ttc_total = 100          # default generic high number
-            av_crossing_scenario = False
-            est_time_needed_to_cross = traci.lane.getLength(crossing + "_0") / cf.est_walking_speed
-            # iterate through all incoming lanes into crossing
-            for incoming_lane in crossing_dict[crossing + "_0"]:
-                closest_vehicle = ""
-                furthest_distance_from_start_of_lane = 0
-                # find vehicle closest to crossing
-                for vehicle in traci.lane.getLastStepVehicleIDs(incoming_lane):
-                    distance_from_start_of_lane = traci.vehicle.getLanePosition(vehicle)
-                    if distance_from_start_of_lane > furthest_distance_from_start_of_lane:
-                        furthest_distance_from_start_of_lane = distance_from_start_of_lane
-                        closest_vehicle = vehicle
-                # add the closest vehicle to dict
-                if closest_vehicle != "":
-                    distance = traci.lane.getLength(incoming_lane) - furthest_distance_from_start_of_lane
-                    if traci.vehicle.getSpeed(closest_vehicle) != 0:
-                        ttc = distance / traci.vehicle.getSpeed(closest_vehicle)
-                        if ttc < lowest_ttc_total:
-                            lowest_ttc_total = ttc
-                            closest_vehicle_total = closest_vehicle
-                        closest_vehicles_dict[incoming_lane] = {"vehicle": closest_vehicle,
-                                                                "distance": distance,
-                                                                "ttc": ttc}
-                    else:                               # prevent division by 0, car standing still
-                        lowest_ttc_total = 10.0
-                        closest_vehicle_total = closest_vehicle
-                        closest_vehicles_dict[incoming_lane] = {"vehicle": closest_vehicle,
-                                                                "distance": distance,
-                                                                "ttc": 10.0}    # car standing still -> no collision
-                    if verbosity >= Verbosity.VERBOSE:
-                        print("current lane: " + str(incoming_lane))
-                        print("veh distance in sec: " + str(closest_vehicles_dict[incoming_lane]["ttc"]))
-                        print("time needed to cross :" + str(est_time_needed_to_cross))
+            # iterate through each unprioritized crossing with pedestrians about to cross
+            for crossing in crossing_waiting_dict:
+                closest_vehicles_dict = {}      # dict with entries for vehID, distance and ttc for each lane
+                closest_vehicle_total = ""
+                lowest_ttc_total = cf.no_vehicle_ttc    # default generic high number
+                av_crossing_scenario = False
+                est_time_needed_to_cross = traci.lane.getLength(crossing + "_0") / cf.est_walking_speed
+                # iterate through all incoming lanes into crossing
+                # sorted() so that av_crossing_scenario does not depend on set iteration order
+                for incoming_lane in sorted(crossing_dict[crossing + "_0"]):
+                    closest_vehicle = ""
+                    furthest_distance_from_start_of_lane = 0
+                    # find vehicle closest to crossing
+                    for vehicle in traci.lane.getLastStepVehicleIDs(incoming_lane):
+                        distance_from_start_of_lane = traci.vehicle.getLanePosition(vehicle)
+                        if distance_from_start_of_lane > furthest_distance_from_start_of_lane:
+                            furthest_distance_from_start_of_lane = distance_from_start_of_lane
+                            closest_vehicle = vehicle
+                    # add the closest vehicle to dict
+                    if closest_vehicle != "":
+                        distance = traci.lane.getLength(incoming_lane) - furthest_distance_from_start_of_lane
+                        if traci.vehicle.getSpeed(closest_vehicle) != 0:
+                            ttc = distance / traci.vehicle.getSpeed(closest_vehicle)
+                            if ttc < lowest_ttc_total:
+                                lowest_ttc_total = ttc
+                                closest_vehicle_total = closest_vehicle
+                            closest_vehicles_dict[incoming_lane] = {"vehicle": closest_vehicle,
+                                                                    "distance": distance,
+                                                                    "ttc": ttc}
+                        else:                               # prevent division by 0, car standing still
+                            # car standing still -> no collision, but only take it as the crossing-wide minimum if it
+                            # really is lower than what another incoming lane already contributed
+                            if cf.standing_vehicle_ttc < lowest_ttc_total:
+                                lowest_ttc_total = cf.standing_vehicle_ttc
+                                closest_vehicle_total = closest_vehicle
+                            closest_vehicles_dict[incoming_lane] = {"vehicle": closest_vehicle,
+                                                                    "distance": distance,
+                                                                    "ttc": cf.standing_vehicle_ttc}
+                        if verbosity >= Verbosity.VERBOSE:
+                            print("current lane: " + str(incoming_lane))
+                            print("veh distance in sec: " + str(closest_vehicles_dict[incoming_lane]["ttc"]))
+                            print("time needed to cross :" + str(est_time_needed_to_cross))
 
-                    # if pedestrian can't usually cross
-                    if closest_vehicles_dict[incoming_lane]["ttc"] < est_time_needed_to_cross:
-                        if closest_vehicle in avs:
-                            av_crossing_scenario = True
-                        else:
-                            av_crossing_scenario = False
-                            break
+                        # if pedestrian can't usually cross
+                        if closest_vehicles_dict[incoming_lane]["ttc"] < est_time_needed_to_cross:
+                            if closest_vehicle in avs:
+                                av_crossing_scenario = True
+                            else:
+                                av_crossing_scenario = False
+                                break
 
-            # pedestrian wouldn't cross the street in a normal sumo simulation and the closest vehicle is an av
-            if av_crossing_scenario:
-                group_size = len(crossing_waiting_dict[crossing])   # number of pedestrians waiting at the crossing
-                incoming_lanes = crossing_dict[crossing + "_0"]     # list of relevant lanes
+                # pedestrian wouldn't cross the street in a normal sumo simulation and the closest vehicle is an av
+                if av_crossing_scenario:
+                    group_size = len(crossing_waiting_dict[crossing])   # number of pedestrians waiting at the crossing
+                    incoming_lanes = crossing_dict[crossing + "_0"]     # list of relevant lanes
 
-                # general defiance factors only have to be calculated once per crossing, as they are independent of
-                # the individual pedestrians wanting to cross
-                general_defiance_factors = get_general_defiance_factors(crossing_waiting_dict, crossing,
-                                                                        closest_vehicle_total, lowest_ttc_total,
-                                                                        group_size, ehmi, incoming_lanes)
-                # look at each waiting pedestrian individually
-                for pedestrian in crossing_waiting_dict[crossing]:
-                    # skip pedestrians that have already decided to cross in an earlier simulation step, but have yet
-                    # to step on the crossing itself
-                    if traci.person.getColor(pedestrian) == cf.altered_pedestrian_color:
-                        continue
-                    # calculate all defiance factors individual for the person thinking about crossing the road
-                    individual_defiance_factors = get_individual_defiance_factors(pedestrian, waiting_pedestrians)
-                    # calculate the probability for the pedestrian to decide to cross the road
-                    crossing_probability = -1.0						
-                    if options.prob_computation == "normal":
-                        crossing_probability = base_automated_vehicle_defiance \
-                                           * general_defiance_factors["group_size_defiance_factor"] \
-                                           * general_defiance_factors["ttc_defiance_factor"] \
-                                           * general_defiance_factors["ehmi_defiance_factor"] \
-                                           * general_defiance_factors["street_width_defiance_factor"] \
-                                           * general_defiance_factors["child_present_defiance_factor"] \
-                                           * general_defiance_factors["vehicle_size_defiance_factor"] \
-                                           * general_defiance_factors["occupancy_rate_defiance_factor"] \
-                                           * individual_defiance_factors["ped_speed_defiance_factor"] \
-                                           * individual_defiance_factors["smombie_defiance_factor"] \
-                                           * individual_defiance_factors["waiting_time_defiance_factor"] \
-                                           * individual_defiance_factors["attribute_defiance_factor"]
-                    elif options.prob_computation == "llm":
-                        if not found_transformers:
-                            print("You have chosen method llm but transformers is not available, aborting.")
-                            sys.exit()
-                        combined_prompt = generate_prompt_for_crossing_decision(pedestrian, waiting_pedestrians, crossing_waiting_dict[crossing], 
-                        crossing, closest_vehicle_total, group_size, lowest_ttc_total, ehmi)
-                        print("The combined_prompt is \"" + combined_prompt + "\"")
-                        output = model(combined_prompt, max_length=128, do_sample=True)
-                        print("The model output is \"" + output[0]['generated_text'] + "\"")
-                        try:
-                            crossing_probability = float(output[0]['generated_text'])
-                        except ValueError:
-                            print("LLM did not deliver a float - using traditional method")
-                            # TODO duplicate code --> cleanup
+                    # general defiance factors only have to be calculated once per crossing, as they are independent of
+                    # the individual pedestrians wanting to cross
+                    general_defiance_factors = get_general_defiance_factors(crossing_waiting_dict, crossing,
+                                                                            closest_vehicle_total, lowest_ttc_total,
+                                                                            group_size, ehmi, incoming_lanes)
+                    # look at each waiting pedestrian individually
+                    # sorted() so each pedestrian consumes the same random draw on every run
+                    for pedestrian in sorted(crossing_waiting_dict[crossing]):
+                        # skip pedestrians that have already decided to cross in an earlier simulation step, but have yet
+                        # to step on the crossing itself
+                        if traci.person.getColor(pedestrian) == cf.altered_pedestrian_color:
+                            continue
+                        # calculate all defiance factors individual for the person thinking about crossing the road
+                        individual_defiance_factors = get_individual_defiance_factors(pedestrian, waiting_pedestrians)
+                        # calculate the probability for the pedestrian to decide to cross the road
+                        crossing_probability = -1.0						
+                        if options.prob_computation == "normal":
                             crossing_probability = base_automated_vehicle_defiance \
-                                           * general_defiance_factors["group_size_defiance_factor"] \
-                                           * general_defiance_factors["ttc_defiance_factor"] \
-                                           * general_defiance_factors["ehmi_defiance_factor"] \
-                                           * general_defiance_factors["street_width_defiance_factor"] \
-                                           * general_defiance_factors["child_present_defiance_factor"] \
-                                           * general_defiance_factors["vehicle_size_defiance_factor"] \
-                                           * general_defiance_factors["occupancy_rate_defiance_factor"] \
-                                           * individual_defiance_factors["ped_speed_defiance_factor"] \
-                                           * individual_defiance_factors["smombie_defiance_factor"] \
-                                           * individual_defiance_factors["waiting_time_defiance_factor"] \
-                                           * individual_defiance_factors["attribute_defiance_factor"]
-                    if verbosity >= Verbosity.NORMAL:
-                        print("++++++++++")
-                        print("The calculated probability for " + pedestrian
-                              + " to cross the crossing " + crossing + " is: "
-                              + str(crossing_probability))
-                    current_random = random.random()
-                    if verbosity >= Verbosity.VERBOSE:
-                        print("The dice rolled: " + str(current_random))
-                    if current_random <= crossing_probability:
-                        crossing_decision = 'cross'
-                    else:
-                        crossing_decision = 'not_cross'
-                    if crossing_probability > 1.0:
-                        effective_crossing_probability = 1.0
-                    else:
-                        effective_crossing_probability = crossing_probability
-
-                    if crossing_decision == "cross":
-                        dangerous_situation = check_for_dangerous_situation(closest_vehicle_total)
-                    else:
-                        dangerous_situation = False
-
-                    try:
-                        entry = [datetime.now(), step, scenario, pedestrian, crossing, round(crossing_probability, 4),
-                                 round(effective_crossing_probability, 4), crossing_decision, dangerous_situation,
-                                 waiting_pedestrians[pedestrian], round(traci.person.getPosition(pedestrian)[0]),
-                                 round(traci.person.getPosition(pedestrian)[1]),
-                                 round(traci.vehicle.getPosition(closest_vehicle_total)[0]),
-                                 round(traci.vehicle.getPosition(closest_vehicle_total)[1]), av_density, ehmi_density,
-                                 base_automated_vehicle_defiance, cf.driver_reaction_time,
-                                 cf.group_size_dfv_two_to_three, cf.group_size_dfv_over_three, cf.ehmi_dfv,
-                                 cf.ttc_lower_extreme_time, cf.ttc_lower_bound_time, cf.ttc_upper_bound_time,
-                                 cf.ttc_dfv_under_lower_extreme, cf.ttc_dfv_under_lower_bound,
-                                 cf.ttc_dfv_over_upper_bound, cf.ttc_base_at_lower_bound, cf.ttc_base_at_upper_bound,
-                                 cf.waiting_time_dfv_under_accepted_value,
-                                 cf.waiting_time_dfv_over_accepted_value_increase_per_second, cf.neutral_street_width,
-                                 cf.girl_present_dfv, cf.boy_present_dfv, cf.child_age, cf.smombie_dfv,
-                                 cf.smombie_start_age, cf.smombie_peak_age, cf.smombie_end_age,
-                                 cf.smombie_chance_at_start_age, cf.smombie_chance_at_peak_age,
-                                 cf.smombie_chance_at_end_age, cf.smombie_base_chance, cf.small_vehicle_size,
-                                 cf.neutral_vehicle_size, cf.large_vehicle_size, cf.small_vehicle_size_dfv,
-                                 cf.neutral_vehicle_size_dfv, cf.large_vehicle_size_dfv, cf.lane_low_occupancy_rate,
-                                 cf.lane_high_occupancy_rate, cf.low_occupancy_rate_dfv, cf.high_occupancy_rate_dfv,
-                                 cf.ped_attribute_dict[pedestrian]["gender"],
-                                 cf.gender_dfvs[cf.ped_attribute_dict[pedestrian]["gender"]],
-                                 cf.ped_attribute_dict[pedestrian]["vision"],
-                                 cf.vision_dfvs[cf.ped_attribute_dict[pedestrian]["vision"]],
-                                 cf.ped_attribute_dict[pedestrian]["age"],
-                                 cf.attribute_dict["age"][cf.ped_attribute_dict[pedestrian]["age"] - 6][2],
-                                 round(general_defiance_factors["group_size_defiance_factor"], 4),
-                                 round(general_defiance_factors["ttc_defiance_factor"], 4),
-                                 general_defiance_factors["ehmi_defiance_factor"],
-                                 round(general_defiance_factors["street_width_defiance_factor"], 4),
-                                 general_defiance_factors["child_present_defiance_factor"],
-                                 round(general_defiance_factors["vehicle_size_defiance_factor"], 4),
-                                 round(general_defiance_factors["occupancy_rate_defiance_factor"], 4),
-                                 individual_defiance_factors["ped_speed_defiance_factor"],
-                                 individual_defiance_factors["smombie_defiance_factor"],
-                                 round(individual_defiance_factors["waiting_time_defiance_factor"], 4),
-                                 round(individual_defiance_factors["attribute_defiance_factor"], 4),
-                                 options.prob_computation]
-                        probabilities_writer.writerow(entry)
-                    except:
-                        print("Error: probabilities.csv row not written.")
-
-                    # Count up numbers in gui.py
-                    crossing_incidents += 1
-                    if cf.guiOn:
-                        crossed = False
-                        if crossing_decision == 'cross':
-                            crossed = True
-                        #gui.current_crossing_events += 1
-                        gui.gndr_check(cf.ped_attribute_dict[pedestrian]["gender"], crossed)
-                        gui.vision_check(cf.ped_attribute_dict[pedestrian]["vision"], crossed)
-                        gui.age_check(cf.ped_attribute_dict[pedestrian]["age"], crossed)
-                        gui.crossing_check(crossing)
-
-                    if current_random <= crossing_probability:
-                        if verbosity >= Verbosity.SPARSE:
-                            print(pedestrian + " decided to cross " + crossing)
+                                               * general_defiance_factors["group_size_defiance_factor"] \
+                                               * general_defiance_factors["ttc_defiance_factor"] \
+                                               * general_defiance_factors["ehmi_defiance_factor"] \
+                                               * general_defiance_factors["street_width_defiance_factor"] \
+                                               * general_defiance_factors["child_present_defiance_factor"] \
+                                               * general_defiance_factors["vehicle_size_defiance_factor"] \
+                                               * general_defiance_factors["occupancy_rate_defiance_factor"] \
+                                               * individual_defiance_factors["ped_speed_defiance_factor"] \
+                                               * individual_defiance_factors["smombie_defiance_factor"] \
+                                               * individual_defiance_factors["waiting_time_defiance_factor"] \
+                                               * individual_defiance_factors["attribute_defiance_factor"]
+                        elif options.prob_computation == "llm":
+                            combined_prompt = generate_prompt_for_crossing_decision(pedestrian, waiting_pedestrians, crossing_waiting_dict[crossing],
+                            crossing, closest_vehicle_total, group_size, lowest_ttc_total, ehmi)
+                            print("The combined_prompt is \"" + combined_prompt + "\"")
+                            output = model(combined_prompt, max_length=128, do_sample=True)
+                            print("The model output is \"" + output[0]['generated_text'] + "\"")
+                            try:
+                                crossing_probability = float(output[0]['generated_text'])
+                            except ValueError:
+                                print("LLM did not deliver a float - using traditional method")
+                                # TODO duplicate code --> cleanup
+                                crossing_probability = base_automated_vehicle_defiance \
+                                               * general_defiance_factors["group_size_defiance_factor"] \
+                                               * general_defiance_factors["ttc_defiance_factor"] \
+                                               * general_defiance_factors["ehmi_defiance_factor"] \
+                                               * general_defiance_factors["street_width_defiance_factor"] \
+                                               * general_defiance_factors["child_present_defiance_factor"] \
+                                               * general_defiance_factors["vehicle_size_defiance_factor"] \
+                                               * general_defiance_factors["occupancy_rate_defiance_factor"] \
+                                               * individual_defiance_factors["ped_speed_defiance_factor"] \
+                                               * individual_defiance_factors["smombie_defiance_factor"] \
+                                               * individual_defiance_factors["waiting_time_defiance_factor"] \
+                                               * individual_defiance_factors["attribute_defiance_factor"]
                         if verbosity >= Verbosity.NORMAL:
-                            print("They were waiting for: " + str(waiting_pedestrians[pedestrian])
-                                  + " seconds to cross.")
-                            print("Factors influencing the decision in value:")
-                            print("Group size: " + str(general_defiance_factors["group_size_defiance_factor"]))
-                            print("Time to collision: " + str(general_defiance_factors["ttc_defiance_factor"]))
-                            print("Ehmi: " + str(general_defiance_factors["ehmi_defiance_factor"]))
-                            print("Street width: " + str(general_defiance_factors["street_width_defiance_factor"]))
-                            print("Child present: " + str(general_defiance_factors["child_present_defiance_factor"]))
-                            print("Vehicle size: " + str(general_defiance_factors["vehicle_size_defiance_factor"]))
-                            print("Road occupancy rate: "
-                                  + str(general_defiance_factors["occupancy_rate_defiance_factor"]))
-                            print("Walking momentum: " + str(individual_defiance_factors["ped_speed_defiance_factor"]))
-                            print("Distracted with smartphone: "
-                                  + str(individual_defiance_factors["smombie_defiance_factor"]))
-                            print("Waiting time: " + str(waiting_pedestrians[pedestrian]) + " -> "
-                                  + str(individual_defiance_factors["waiting_time_defiance_factor"]))
-                            print("Total factor from attributes: "
-                                  + str(individual_defiance_factors["attribute_defiance_factor"]))
-                            print("    Gender: " + str(cf.ped_attribute_dict[pedestrian]["gender"]))
-                            print("    Age: " + str(cf.ped_attribute_dict[pedestrian]["age"]))
-                            print("    Vision: " + str(cf.ped_attribute_dict[pedestrian]["vision"]))
+                            print("++++++++++")
+                            print("The calculated probability for " + pedestrian
+                                  + " to cross the crossing " + crossing + " is: "
+                                  + str(crossing_probability))
+                        current_random = random.random()
+                        if verbosity >= Verbosity.VERBOSE:
+                            print("The dice rolled: " + str(current_random))
+                        if current_random <= crossing_probability:
+                            crossing_decision = 'cross'
+                        else:
+                            crossing_decision = 'not_cross'
+                        if crossing_probability > 1.0:
+                            effective_crossing_probability = 1.0
+                        else:
+                            effective_crossing_probability = crossing_probability
+
+                        if crossing_decision == "cross":
+                            dangerous_situation = check_for_dangerous_situation(closest_vehicle_total)
+                        else:
+                            dangerous_situation = False
 
                         try:
-                            traci.person.setColor(pedestrian, cf.altered_pedestrian_color)
-                            vehicle_types = traci.vehicletype.getIDList()
-                            # make pedestrian ignore all vehicles in the simulation (break traffic rules)
-                            traci.person.setParameter(pedestrian, "junctionModel.ignoreTypes", " ".join(vehicle_types))
-                        except traci.TraCIException as e:
-                            print("something went wrong when trying to change " + pedestrian + ": " + repr(e))
-                            crossing_waiting_dict[crossing].remove(pedestrian)
-                            break
+                            entry = [datetime.now(), step, scenario, pedestrian, crossing, round(crossing_probability, 4),
+                                     round(effective_crossing_probability, 4), crossing_decision, dangerous_situation,
+                                     waiting_pedestrians[pedestrian], round(traci.person.getPosition(pedestrian)[0]),
+                                     round(traci.person.getPosition(pedestrian)[1]),
+                                     round(traci.vehicle.getPosition(closest_vehicle_total)[0]),
+                                     round(traci.vehicle.getPosition(closest_vehicle_total)[1]), av_density, ehmi_density,
+                                     base_automated_vehicle_defiance, cf.driver_reaction_time,
+                                     cf.group_size_dfv_two_to_three, cf.group_size_dfv_over_three, cf.ehmi_dfv,
+                                     cf.ttc_lower_extreme_time, cf.ttc_lower_bound_time, cf.ttc_upper_bound_time,
+                                     cf.ttc_dfv_under_lower_extreme, cf.ttc_dfv_under_lower_bound,
+                                     cf.ttc_dfv_over_upper_bound, cf.ttc_base_at_lower_bound, cf.ttc_base_at_upper_bound,
+                                     cf.waiting_time_dfv_under_accepted_value,
+                                     cf.waiting_time_dfv_over_accepted_value_increase_per_second, cf.neutral_street_width,
+                                     cf.girl_present_dfv, cf.boy_present_dfv, cf.child_age, cf.smombie_dfv,
+                                     cf.smombie_start_age, cf.smombie_peak_age, cf.smombie_end_age,
+                                     cf.smombie_chance_at_start_age, cf.smombie_chance_at_peak_age,
+                                     cf.smombie_chance_at_end_age, cf.smombie_base_chance, cf.small_vehicle_size,
+                                     cf.neutral_vehicle_size, cf.large_vehicle_size, cf.small_vehicle_size_dfv,
+                                     cf.neutral_vehicle_size_dfv, cf.large_vehicle_size_dfv, cf.lane_low_occupancy_rate,
+                                     cf.lane_high_occupancy_rate, cf.low_occupancy_rate_dfv, cf.high_occupancy_rate_dfv,
+                                     cf.ped_attribute_dict[pedestrian]["gender"],
+                                     cf.gender_dfvs[cf.ped_attribute_dict[pedestrian]["gender"]],
+                                     cf.ped_attribute_dict[pedestrian]["vision"],
+                                     cf.vision_dfvs[cf.ped_attribute_dict[pedestrian]["vision"]],
+                                     cf.ped_attribute_dict[pedestrian]["age"],
+                                     cf.attribute_dict["age"][cf.ped_attribute_dict[pedestrian]["age"] - 6][2],
+                                     round(general_defiance_factors["group_size_defiance_factor"], 4),
+                                     round(general_defiance_factors["ttc_defiance_factor"], 4),
+                                     general_defiance_factors["ehmi_defiance_factor"],
+                                     round(general_defiance_factors["street_width_defiance_factor"], 4),
+                                     general_defiance_factors["child_present_defiance_factor"],
+                                     round(general_defiance_factors["vehicle_size_defiance_factor"], 4),
+                                     round(general_defiance_factors["occupancy_rate_defiance_factor"], 4),
+                                     individual_defiance_factors["ped_speed_defiance_factor"],
+                                     individual_defiance_factors["smombie_defiance_factor"],
+                                     round(individual_defiance_factors["waiting_time_defiance_factor"], 4),
+                                     round(individual_defiance_factors["attribute_defiance_factor"], 4),
+                                     options.prob_computation, options.seed]
+                            probabilities_writer.writerow(entry)
+                        except (traci.TraCIException, KeyError, IndexError, ValueError, OSError) as row_error:
+                            # narrow the catch: a bare except also swallowed KeyboardInterrupt and SystemExit,
+                            # and hid the actual cause of every missing row
+                            print("Error: probabilities.csv row not written (" + repr(row_error) + ").")
 
-        reset_crossed_pedestrians(waiting_pedestrians, crossing_waiting_dict)
+                        # Count up numbers in gui.py
+                        crossing_incidents += 1
+                        if cf.guiOn:
+                            crossed = False
+                            if crossing_decision == 'cross':
+                                crossed = True
+                            #gui.current_crossing_events += 1
+                            gui.gndr_check(cf.ped_attribute_dict[pedestrian]["gender"], crossed)
+                            gui.vision_check(cf.ped_attribute_dict[pedestrian]["vision"], crossed)
+                            gui.age_check(cf.ped_attribute_dict[pedestrian]["age"], crossed)
+                            gui.crossing_check(crossing)
 
-        last_step_vehicles = set(vehicles)          # save current vehicles for the next simulation step
-        last_step_pedestrians = set(pedestrians)    # save current pedestrians for the next simulation step
+                        if current_random <= crossing_probability:
+                            if verbosity >= Verbosity.SPARSE:
+                                print(pedestrian + " decided to cross " + crossing)
+                            if verbosity >= Verbosity.NORMAL:
+                                print("They were waiting for: " + str(waiting_pedestrians[pedestrian])
+                                      + " seconds to cross.")
+                                print("Factors influencing the decision in value:")
+                                print("Group size: " + str(general_defiance_factors["group_size_defiance_factor"]))
+                                print("Time to collision: " + str(general_defiance_factors["ttc_defiance_factor"]))
+                                print("Ehmi: " + str(general_defiance_factors["ehmi_defiance_factor"]))
+                                print("Street width: " + str(general_defiance_factors["street_width_defiance_factor"]))
+                                print("Child present: " + str(general_defiance_factors["child_present_defiance_factor"]))
+                                print("Vehicle size: " + str(general_defiance_factors["vehicle_size_defiance_factor"]))
+                                print("Road occupancy rate: "
+                                      + str(general_defiance_factors["occupancy_rate_defiance_factor"]))
+                                print("Walking momentum: " + str(individual_defiance_factors["ped_speed_defiance_factor"]))
+                                print("Distracted with smartphone: "
+                                      + str(individual_defiance_factors["smombie_defiance_factor"]))
+                                print("Waiting time: " + str(waiting_pedestrians[pedestrian]) + " -> "
+                                      + str(individual_defiance_factors["waiting_time_defiance_factor"]))
+                                print("Total factor from attributes: "
+                                      + str(individual_defiance_factors["attribute_defiance_factor"]))
+                                print("    Gender: " + str(cf.ped_attribute_dict[pedestrian]["gender"]))
+                                print("    Age: " + str(cf.ped_attribute_dict[pedestrian]["age"]))
+                                print("    Vision: " + str(cf.ped_attribute_dict[pedestrian]["vision"]))
 
-        step += 1
+                            try:
+                                traci.person.setColor(pedestrian, cf.altered_pedestrian_color)
+                                vehicle_types = traci.vehicletype.getIDList()
+                                # make pedestrian ignore all vehicles in the simulation (break traffic rules)
+                                traci.person.setParameter(pedestrian, "junctionModel.ignoreTypes", " ".join(vehicle_types))
+                            except traci.TraCIException as e:
+                                print("something went wrong when trying to change " + pedestrian + ": " + repr(e))
+                                crossing_waiting_dict[crossing].remove(pedestrian)
+                                break
 
-    sim_end_time = time.perf_counter()
-    time_elapsed = int(sim_end_time - sim_start_time)
-    print("Simulation " + get_current_simulation_name() + " lasted " + str(dt.timedelta(seconds=time_elapsed)) + " and " + str(crossing_incidents) + " crossing incidents occured.")
-    probabilities_file.close()
+            reset_crossed_pedestrians(waiting_pedestrians, crossing_waiting_dict)
+
+            last_step_vehicles = set(vehicles)          # save current vehicles for the next simulation step
+            last_step_pedestrians = set(pedestrians)    # save current pedestrians for the next simulation step
+
+            step += 1
+
+        sim_end_time = time.perf_counter()
+        time_elapsed = int(sim_end_time - sim_start_time)
+        print("Simulation " + get_current_simulation_name() + " lasted " + str(dt.timedelta(seconds=time_elapsed)) + " and " + str(crossing_incidents) + " crossing incidents occured.")
+    finally:
+        # close in a finally so the rows collected so far survive an aborted or interrupted run
+        probabilities_file.close()
     end_simulation()
 
 
@@ -935,24 +1023,29 @@ def end_simulation():
     global results_folder_for_next_sim
     if cf.convert_to_csv_after_sim:
         try:
-            os_arg = xml2csvSWA.pythonPath + " xml2csvSWA.py -fn " + results_folder_for_next_sim.rsplit('/', 1)[-1]
-            os.system(os_arg)
-        except:
-            print("Converting result folder content to csv failed. You may have to adjust paths in xml2csvSWA.py.")
+            # os.path.basename handles both separators; rsplit('/') silently returned the whole path on Windows.
+            # subprocess avoids the quoting problems os.system has with spaces in paths.
+            folder_name = os.path.basename(results_folder_for_next_sim)
+            subprocess.run([xml2csvSWA.pythonPath, "xml2csvSWA.py", "-fn", folder_name], check=True)
+        except (OSError, subprocess.SubprocessError) as convert_error:
+            print("Converting result folder content to csv failed (" + repr(convert_error)
+                  + "). You may have to adjust paths in xml2csvSWA.py.")
     results_folder_for_next_sim = ""
     sys.stdout.flush()
 
 
 def get_current_simulation_name() -> str:
     """
-    Gets current name of the simulation by path. If no name is found
-    returns empty string.
+    Gets current name of the simulation by path.
 
+    Falls back to the .sumocfg file name for scenarios passed via --scenario_path, which are not
+    listed in cf.scenarios. Returning "" there produced result folders called "-avd0.500-..." whose
+    leading dash is read as an option by most command line tools.
     """
     for elem in cf.scenarios:
         if elem[1] == cf.sumocfgPath:
             return elem[0]
-    return ""
+    return os.path.splitext(os.path.basename(cf.sumocfgPath))[0]
 
 
 # creates new folder for results in next simulation
@@ -1178,6 +1271,11 @@ def init_sim():
                         run()
                     else:
                         results_folder_for_next_sim = get_new_results_folder()
+                        if results_folder_for_next_sim == "":
+                            # an unchecked "" here made the run write probabilities-.csv into the working
+                            # directory and silently overwrite the previous sweep step
+                            sys.exit("Could not create a results folder for the next loop iteration "
+                                     "(a folder with the same name already exists). Aborting.")
                         traci_start_config = generate_start_config(sumo_binary)
                         traci.start(traci_start_config)
                         run()
@@ -1198,8 +1296,13 @@ def init_sim():
 
 
 def prepare_sim():
-    if cf.guiOn and not options.nogui:
-        import gui
+    # --nogui makes cf.guiOn the single source of truth, so no code path can reach the gui module
+    # without load_gui() having run first
+    if options.nogui:
+        cf.guiOn = False
+        cf.visualization_shown = False
+    if cf.guiOn:
+        load_gui()
         start_cgui()
     else:
         init_sim()

@@ -1,0 +1,133 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    # The unit tests stub traci, sumolib and the GUI, so they need neither a SUMO install,
+    # a display, nor the Git LFS payload.
+    name: unit tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+  build:
+    name: build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          python -m twine check dist/*
+
+      - name: Verify the wheel ships the simulation code, not the tests
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          required = {"SumoWithAVs/main.py", "SumoWithAVs/config.py", "SumoWithAVs/gui.py"}
+          missing = sorted(required - set(names))
+          leaked = sorted(n for n in names if n.startswith("tests/"))
+          if missing or leaked:
+              sys.exit("missing=%s leaked=%s" % (missing, leaked))
+          print("wheel contents OK")
+          PY
+
+  simulation:
+    # End-to-end check against a real SUMO install, plus the property the analytical model depends on:
+    # a given --seed must reproduce the same crossing decisions regardless of PYTHONHASHSEED.
+    name: headless simulation + reproducibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Fetch only the test network from Git LFS
+        # pulling every scenario would burn the repository's LFS bandwidth on each run
+        run: git lfs pull --include="resources/testNetwork/*"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Eclipse SUMO
+        run: |
+          sudo add-apt-repository -y ppa:sumo/stable
+          sudo apt-get update
+          sudo apt-get install -y sumo sumo-tools
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip sumolib
+
+      - name: Run the same configuration under two different hash seeds
+        env:
+          SUMO_HOME: /usr/share/sumo
+        working-directory: SumoWithAVs
+        run: |
+          set -eux
+          for hashseed in 1 2; do
+            PYTHONHASHSEED=$hashseed python main.py \
+              --nogui --scenario Small_Test_Network --time_steps 300 -v none --seed 42
+          done
+
+      - name: Assert both runs produced identical crossing decisions
+        run: |
+          python - <<'PY'
+          import csv, glob, os, sys
+
+          folders = sorted(glob.glob(os.path.join("simulation-results", "Small_Test_Network-*")))
+          if len(folders) != 2:
+              sys.exit("expected 2 result folders, found %d: %s" % (len(folders), folders))
+
+          def decisions(folder):
+              path = os.path.join(folder, "probabilities-%s.csv" % os.path.basename(folder))
+              with open(path, newline="") as handle:
+                  rows = list(csv.reader(handle, delimiter=";"))
+              header, body = rows[0], rows[1:]
+              # drop the wall-clock timestamp, which legitimately differs between runs
+              timestamp = header.index("timestamp")
+              return [row[:timestamp] + row[timestamp + 1:] for row in body]
+
+          first, second = decisions(folders[0]), decisions(folders[1])
+          if not first:
+              sys.exit("no crossing decisions were recorded; the scenario produced no data")
+          if first != second:
+              for a, b in zip(first, second):
+                  if a != b:
+                      sys.exit("runs diverged:\n  PYTHONHASHSEED=1 %s\n  PYTHONHASHSEED=2 %s" % (a, b))
+              sys.exit("runs produced different numbers of decisions: %d vs %d"
+                       % (len(first), len(second)))
+          print("reproducible: %d identical crossing decisions across both runs" % len(first))
+          PY
