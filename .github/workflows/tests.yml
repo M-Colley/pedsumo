@@ -74,9 +74,15 @@ jobs:
         with:
           lfs: false
 
-      - name: Fetch only the test network from Git LFS
-        # pulling every scenario would burn the repository's LFS bandwidth on each run
-        run: git lfs pull --include="resources/testNetwork/*"
+      - name: Fetch only the files the test scenario needs from Git LFS
+        # The repository has a 1 GB/month LFS bandwidth quota, so pull the four files
+        # BasicConfig.sumocfg actually references (~84 KB) rather than the directory:
+        # resources/testNetwork also holds an unrelated 270 MB route file, and pulling the whole
+        # directory would exhaust the quota in four CI runs.
+        run: |
+          git lfs pull --include="resources/testNetwork/BasicConfig.sumocfg,resources/testNetwork/BasicNetwork.net.xml,resources/testNetwork/BasicDemand.rou.xml,resources/testNetwork/BasicView.xml"
+          head -c 60 resources/testNetwork/BasicNetwork.net.xml
+          du -ch resources/testNetwork/Basic* | tail -1
 
       - uses: actions/setup-python@v5
         with:
