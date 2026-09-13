@@ -354,8 +354,13 @@ class ConfigAndCliTests(MainLogicTestBase):
             sumocfgPath="/tmp/b.sumocfg",
         )
         self.assertEqual(self.main.get_current_simulation_name(), "ScenarioB")
-        self.set_config(sumocfgPath="/tmp/unknown.sumocfg")
-        self.assertEqual(self.main.get_current_simulation_name(), "")
+
+    def test_unlisted_scenario_path_falls_back_to_the_sumocfg_name(self):
+        # a --scenario_path run is not in cf.scenarios; returning "" built result folders named
+        # "-avd0.500-..." whose leading dash most command line tools read as an option
+        self.set_config(scenarios=[["ScenarioA", "/tmp/a.sumocfg"]],
+                        sumocfgPath=os.path.join("some", "where", "my_city.sumocfg"))
+        self.assertEqual(self.main.get_current_simulation_name(), "my_city")
 
     def test_generate_start_config_contains_selected_outputs_and_thread_option(self):
         results_folder = os.path.join("tmp", "results")

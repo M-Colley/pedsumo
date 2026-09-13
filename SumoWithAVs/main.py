@@ -1036,14 +1036,16 @@ def end_simulation():
 
 def get_current_simulation_name() -> str:
     """
-    Gets current name of the simulation by path. If no name is found
-    returns empty string.
+    Gets current name of the simulation by path.
 
+    Falls back to the .sumocfg file name for scenarios passed via --scenario_path, which are not
+    listed in cf.scenarios. Returning "" there produced result folders called "-avd0.500-..." whose
+    leading dash is read as an option by most command line tools.
     """
     for elem in cf.scenarios:
         if elem[1] == cf.sumocfgPath:
             return elem[0]
-    return ""
+    return os.path.splitext(os.path.basename(cf.sumocfgPath))[0]
 
 
 # creates new folder for results in next simulation
